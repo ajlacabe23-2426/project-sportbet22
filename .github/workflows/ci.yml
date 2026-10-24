@@ -34,6 +34,17 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m sportprob.cli backtest --data data/demo_games.csv --player DEMO-001 --stat points
+      - name: Verify offline HTML report CLI
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m sportprob.cli report
+          --data data/demo_games.csv
+          --manifest data/demo_games.manifest.json
+          --player DEMO-001 --stat points --as-of 2025-11-21
+          --output outputs/ci-report.html
+      - name: Assert report was produced
+        run: test -s outputs/ci-report.html
       - name: Frozen holdout from checksum-verified synthetic fixture
         env:
           PYTHONPATH: src
