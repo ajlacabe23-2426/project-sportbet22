@@ -11,6 +11,7 @@ from .ingest import load_game_logs
 from .governance import DatasetManifest, verify_snapshot
 from .holdout import evaluate_frozen_holdout
 from .model import forecast
+from .report import render_forecast_report, save_forecast_report
 from .schema import STATS
 
 
@@ -19,7 +20,7 @@ def main() -> None:
         prog="sportprob", description="Simulation-only player performance research"
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("forecast", "backtest", "holdout"):
+    for name in ("forecast", "backtest", "holdout", "report"):
         command = commands.add_parser(name)
         command.add_argument("--data", required=True, help="authorized game-log CSV")
         command.add_argument("--player", required=True, help="stable player ID")
@@ -27,6 +28,12 @@ def main() -> None:
     forecast_parser = commands.choices["forecast"]
     forecast_parser.add_argument("--as-of", required=True, help="YYYY-MM-DD; excludes this date")
     forecast_parser.add_argument("--minutes", type=float, default=None)
+    report_parser = commands.choices["report"]
+    report_parser.add_argument("--manifest", required=True, help="research rights/checksum manifest")
+    report_parser.add_argument("--as-of", required=True, help="YYYY-MM-DD; excludes this date")
+    report_parser.add_argument("--minutes", type=float, default=None)
+    report_parser.add_argument("--output", required=True, help="local .html destination")
+    report_parser.add_argument("--overwrite", action="store_true", help="explicitly replace an existing report")
     holdout_parser = commands.choices["holdout"]
     holdout_parser.add_argument("--manifest", required=True, help="research rights/checksum manifest")
     holdout_parser.add_argument("--start", required=True, help="first withheld YYYY-MM-DD")
@@ -59,6 +66,26 @@ def main() -> None:
                 "research_only": True,
                 "model_status": "uncalibrated research baseline",
                 **asdict(backtest(logs, args.player, args.stat)),
+            }
+        elif args.command == "report":
+            manifest = DatasetManifest.from_file(args.manifest)
+            verified_hash = verify_snapshot(args.data, manifest)
+            prediction = forecast(
+                logs, args.player, args.stat, date.fromisoformat(args.as_of),
+                projected_minutes=args.minutes,
+            )
+            if not args.output.lower().endswith(".html"):
+                raise ValueError("report output path must end in .html")
+            html = render_forecast_report(
+                prediction, dataset_id=manifest.dataset_id,
+                dataset_sha256=verified_hash, source_name=manifest.source_name,
+                synthetic=manifest.synthetic,
+            )
+            destination = save_forecast_report(html, args.output, overwrite=args.overwrite)
+            output = {
+                "research_only": True, "model_status": "uncalibrated research baseline",
+                "local_html_report": str(destination), "synthetic": manifest.synthetic,
+                "dataset_sha256": verified_hash, "network_requests": False,
             }
         else:
             manifest = DatasetManifest.from_file(args.manifest)
