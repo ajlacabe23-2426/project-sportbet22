@@ -38,6 +38,19 @@ A single most-likely 5-point bucket might have only 30% probability. A wider 80%
 See [architecture](docs/ARCHITECTURE.md). Proposed changes are kept on a feature branch for review; no deployment is configured.
 
 
+## Offline visual dashboard (no live services)
+
+From the repository root, generate a standalone HTML report from the **checksum-verified synthetic sample**:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m sportprob.cli report --data data/demo_games.csv --manifest data/demo_games.manifest.json --player DEMO-001 --stat points --as-of 2025-11-21 --output outputs/demo-points.html
+```
+
+Then open `outputs/demo-points.html` in your browser. The report shows the expected count, 80%/90% central model intervals, most probable fixed-width bucket, a probability distribution table/bar chart, and the dataset provenance. It needs **no server, dependencies, external scripts, API key, network access, or account**. Use `--overwrite` only when you deliberately want to replace your previous generated report. Change `--stat` to `rebounds` or `assists` for a different research view.
+
+The CSV and manifest remain on your computer. A matching SHA-256 checks local file integrity but does **not** prove licensed data or statistical accuracy. For an independent research dataset, supply your own authorized CSV and corresponding explicitly documented manifest; the tooling does not acquire real NBA data. Synthetic demonstration metrics are not suitable for predictive claims. No sportsbook or wager functions are provided.
+
 ## Frozen historical holdout (research-only)
 
 The ordinary `backtest` is a sequential walk-forward diagnostic, not a completely untouched test set. For a separate, **frozen holdout** check, choose a cutoff before inspecting the outcomes and run the checksum-gated evaluator:
