@@ -36,3 +36,19 @@ python -m sportprob.cli --help
 A single most-likely 5-point bucket might have only 30% probability. A wider 80% interval is a **model-based prediction interval**, not a guarantee. In particular, the v1 dispersion values are research defaults and **not fitted or calibrated against actual NBA game data**. Run walk-forward backtests on licensed/authorized real data before interpreting any reliability claim. Compare forecasts produced before each event to later observations; do not permit revisions or post-game knowledge to leak into historic features.
 
 See [architecture](docs/ARCHITECTURE.md). Proposed changes are kept on a feature branch for review; no deployment is configured.
+
+
+## Frozen historical holdout (research-only)
+
+The ordinary `backtest` is a sequential walk-forward diagnostic, not a completely untouched test set. For a separate, **frozen holdout** check, choose a cutoff before inspecting the outcomes and run the checksum-gated evaluator:
+
+```bash
+PYTHONPATH=src python -m sportprob.cli holdout \
+  --data data/demo_games.csv \
+  --manifest data/demo_games.manifest.json \
+  --player DEMO-001 --stat points --start 2025-11-16
+```
+
+The frozen report uses *only* played games strictly before the cutoff for **every** held-out prediction, without learning from any game on or after the cutoff. It reports observation counts, negative log likelihood, 80%/90% interval coverage and average widths. It checks declared research rights and file SHA-256, but does not independently establish licensing or data authenticity. The synthetic five-game holdout is a regression demonstration, **not evidence of NBA forecasting accuracy**, and repeated experiments on its labels invalidate its status as untouched.
+
+No data acquisition, sportsbook interface, picks, payment processing, or wagering calculations are included.
