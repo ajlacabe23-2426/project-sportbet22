@@ -8,6 +8,8 @@ import json
 
 from .evaluate import backtest
 from .ingest import load_game_logs
+from .governance import DatasetManifest, verify_snapshot
+from .holdout import evaluate_frozen_holdout
 from .model import forecast
 from .schema import STATS
 
@@ -17,7 +19,7 @@ def main() -> None:
         prog="sportprob", description="Simulation-only player performance research"
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("forecast", "backtest"):
+    for name in ("forecast", "backtest", "holdout"):
         command = commands.add_parser(name)
         command.add_argument("--data", required=True, help="authorized game-log CSV")
         command.add_argument("--player", required=True, help="stable player ID")
@@ -25,6 +27,10 @@ def main() -> None:
     forecast_parser = commands.choices["forecast"]
     forecast_parser.add_argument("--as-of", required=True, help="YYYY-MM-DD; excludes this date")
     forecast_parser.add_argument("--minutes", type=float, default=None)
+    holdout_parser = commands.choices["holdout"]
+    holdout_parser.add_argument("--manifest", required=True, help="research rights/checksum manifest")
+    holdout_parser.add_argument("--start", required=True, help="first withheld YYYY-MM-DD")
+    holdout_parser.add_argument("--end", default=None, help="optional exclusive YYYY-MM-DD")
     args = parser.parse_args()
     try:
         logs = load_game_logs(args.data)
@@ -48,11 +54,28 @@ def main() -> None:
                 "fixed_width_buckets": [asdict(bucket) for bucket in prediction.buckets()],
                 "model_status": "uncalibrated research baseline",
             }
-        else:
+        elif args.command == "backtest":
             output = {
                 "research_only": True,
                 "model_status": "uncalibrated research baseline",
                 **asdict(backtest(logs, args.player, args.stat)),
+            }
+        else:
+            manifest = DatasetManifest.from_file(args.manifest)
+            verified_hash = verify_snapshot(args.data, manifest)
+            result = evaluate_frozen_holdout(
+                logs, args.player, args.stat,
+                holdout_start=date.fromisoformat(args.start),
+                holdout_end_exclusive=date.fromisoformat(args.end) if args.end else None,
+            )
+            output = {
+                "research_only": True,
+                "model_status": "uncalibrated research baseline",
+                "dataset_id": manifest.dataset_id,
+                "synthetic": manifest.synthetic,
+                "sha256_verified": verified_hash,
+                "rights_are_not_independently_verified": True,
+                **asdict(result),
             }
     except (ValueError, OSError) as exc:
         parser.error(str(exc))
