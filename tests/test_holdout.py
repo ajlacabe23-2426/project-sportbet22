@@ -4,7 +4,7 @@ from datetime import date
 from pathlib import Path
 import unittest
 
-from sportprob.holdout import evaluate_frozen_holdout
+from sportprob.holdout import evaluate_frozen_holdout, wilson_coverage_interval
 from sportprob.ingest import load_game_logs
 from sportprob.model import forecast
 
@@ -28,6 +28,28 @@ class FrozenHoldoutTests(unittest.TestCase):
         self.assertFalse(report.calibrated_on_real_nba_data)
         self.assertTrue(0 <= report.coverage_80 <= 1)
         self.assertTrue(0 <= report.coverage_90 <= 1)
+
+    def test_small_sample_coverage_uncertainty_is_reported(self):
+        report = evaluate_frozen_holdout(
+            self.logs, "DEMO-001", "points", holdout_start=self.start
+        )
+        self.assertEqual(report.evaluated_games, 5)
+        for observed, bounds in (
+            (report.coverage_80, report.coverage_80_wilson_95),
+            (report.coverage_90, report.coverage_90_wilson_95),
+        ):
+            self.assertLess(bounds[0], bounds[1])
+            self.assertLessEqual(bounds[0], observed)
+            self.assertGreaterEqual(bounds[1], observed)
+            self.assertTrue(all(0 <= value <= 1 for value in bounds))
+
+    def test_wilson_bounds_reject_invalid_counts(self):
+        self.assertAlmostEqual(wilson_coverage_interval(0, 5)[0], 0)
+        self.assertAlmostEqual(wilson_coverage_interval(5, 5)[1], 1)
+        self.assertLess(wilson_coverage_interval(5, 5)[0], 0.6)
+        for hits, games in ((-1, 5), (6, 5), (0, 0)):
+            with self.assertRaisesRegex(ValueError, "coverage"):
+                wilson_coverage_interval(hits, games)
 
     def test_frozen_model_never_sees_heldout_labels(self):
         early = [r for r in self.logs if r.game_date < self.start]
