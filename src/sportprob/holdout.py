@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from math import log
+from math import log, sqrt
 
 from .model import forecast
 from .schema import GameLog, STATS
@@ -28,8 +28,30 @@ class FrozenHoldout:
     coverage_90: float
     average_width_80: float
     average_width_90: float
+    coverage_80_wilson_95: tuple[float, float]
+    coverage_90_wilson_95: tuple[float, float]
     training_policy: str = "frozen_pre_holdout_only"
     calibrated_on_real_nba_data: bool = False
+
+
+def wilson_coverage_interval(successes: int, trials: int) -> tuple[float, float]:
+    """95% Wilson score bounds for an observed interval-coverage fraction.
+
+    Quantifies finite-sample uncertainty; it does NOT calibrate the model.
+    """
+    if type(trials) is not int or type(successes) is not int:
+        raise ValueError("coverage counts must be integers")
+    if trials <= 0 or not 0 <= successes <= trials:
+        raise ValueError("coverage count must fall within a positive sample size")
+    z = 1.959963984540054
+    p = successes / trials
+    z2 = z * z
+    denominator = 1.0 + z2 / trials
+    center = (p + z2 / (2.0 * trials)) / denominator
+    half = (z / denominator) * sqrt(
+        p * (1.0 - p) / trials + z2 / (4.0 * trials * trials)
+    )
+    return max(0.0, center - half), min(1.0, center + half)
 
 
 def evaluate_frozen_holdout(
@@ -110,4 +132,6 @@ def evaluate_frozen_holdout(
         coverage_90=cov90 / n,
         average_width_80=width80 / n,
         average_width_90=width90 / n,
+        coverage_80_wilson_95=wilson_coverage_interval(int(cov80), n),
+        coverage_90_wilson_95=wilson_coverage_interval(int(cov90), n),
     )
