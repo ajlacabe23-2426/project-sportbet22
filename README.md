@@ -65,3 +65,18 @@ PYTHONPATH=src python -m sportprob.cli holdout \
 The frozen report uses *only* played games strictly before the cutoff for **every** held-out prediction, without learning from any game on or after the cutoff. It reports observation counts, negative log likelihood, 80%/90% interval coverage and average widths. It checks declared research rights and file SHA-256, but does not independently establish licensing or data authenticity. The synthetic five-game holdout is a regression demonstration, **not evidence of NBA forecasting accuracy**, and repeated experiments on its labels invalidate its status as untouched.
 
 No data acquisition, sportsbook interface, picks, payment processing, or wagering calculations are included.
+
+## Offline player-history readiness audit
+
+Before interpreting any forecast from an independently supplied, authorized dataset, check the manifest, checksum and per-player observation quality:
+
+```bash
+PYTHONPATH=src python -m sportprob.coverage \
+  --data data/demo_games.csv \
+  --manifest data/demo_games.manifest.json \
+  --player DEMO-001 --minimum-games 30
+```
+
+This research diagnostic explicitly labels the bundled fixture `DEMONSTRATION_ONLY`, reports inadequate history or missing home/away flags, and never certifies model accuracy. A structurally clean real-data dataset still requires verified source rights, frozen point-in-time splits, independently measured forecast calibration, and appropriate interpretation. No sportsbook interfaces, wagers, or guaranteed income are included.
+
+Run the full regression suite with `PYTHONPATH=src python -m unittest discover -s tests -v`.
