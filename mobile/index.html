@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SportProb | Player Statistics Explorer</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#0b1220;color:#f2f6fc}
+*{box-sizing:border-box}body{margin:0}main{max-width:840px;margin:auto;padding:24px 16px 60px}
+h1{font-size:clamp(1.8rem,6vw,2.7rem);margin:0}p{line-height:1.5;color:#b5c5d9}
+.panel{background:#142136;border:1px solid #30435d;border-radius:18px;padding:18px;margin-top:18px}
+label{display:block;margin:12px 0 6px;font-weight:650}input,select{width:100%;font:inherit;padding:12px;border:1px solid #68819d;border-radius:10px;background:#09182b;color:white}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metric{background:#1c304b;padding:14px;border-radius:12px}.metric b{font-size:1.5rem;display:block}
+small{color:#b5c5d9}.notice{border-left:4px solid #e2b04a;padding-left:12px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:10px 6px;border-bottom:1px solid #33445a}th{color:#b5c5d9}
+.scroll{overflow:auto}svg{width:100%;height:auto}.sr{position:absolute;left:-10000px}
+@media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.metric:last-child{grid-column:span 2}}
+</style></head><body><main>
+<header><small>SPORTPROB · RESEARCH PREVIEW</small><h1>Player statistics explorer</h1><p>Mobile-first, local CSV analysis. Files remain in your browser; no upload or account required.</p></header>
+<section class="panel"><label for="file">Choose a permitted game-log CSV</label><input id="file" type="file" accept=".csv,text/csv">
+<p>Required columns: <code>player,date,points,rebounds,assists</code>. Use one row per player per game. No data is bundled or fetched automatically.</p>
+<p class="notice">Descriptive historical statistics only. No wagering recommendations or claims of predictive accuracy. Confirm source rights and completeness.</p>
+<label for="player">Player</label><select id="player" disabled><option>Load a CSV first</option></select>
+<label for="stat">Statistic</label><select id="stat"><option value="points">Points</option><option value="rebounds">Rebounds</option><option value="assists">Assists</option></select>
+<p id="status" role="status">Waiting for data.</p></section>
+<section id="results" hidden><div class="grid" id="metrics"></div><div class="panel"><h2>Game-by-game history</h2><svg id="chart" viewBox="0 0 640 230" role="img" aria-label="Historical player statistics line chart"></svg><div class="scroll"><table><thead><tr><th>Date</th><th>Value</th></tr></thead><tbody id="rows"></tbody></table></div></div></section>
+</main><script>
+"use strict";
+const file=document.querySelector("#file"),player=document.querySelector("#player"),stat=document.querySelector("#stat"),status=document.querySelector("#status"),results=document.querySelector("#results");
+let games=[];
+function csvRows(input){const rows=[];let row=[],cell="",quoted=false;for(let i=0;i<input.length;i++){const c=input[i];if(c==='"'){if(quoted&&input[i+1]==='"'){cell+='"';i++}else quoted=!quoted}else if(c===","&&!quoted){row.push(cell);cell=""}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&input[i+1]==="\n")i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell=""}else cell+=c}if(quoted)throw Error("Unclosed CSV quote");row.push(cell);if(row.some(x=>x.trim()))rows.push(row);return rows}
+function load(raw){const lines=csvRows(raw);if(lines.length<2)throw Error("No game rows");const head=lines.shift().map(x=>x.trim().toLowerCase());const names=["player","date","points","rebounds","assists"];const indices=names.map(x=>head.indexOf(x));if(indices.some(x=>x<0))throw Error("Required columns missing");if(lines.length>20000)throw Error("Too many rows (maximum 20,000)");const seen=new Set();return lines.map((r,i)=>{const v=indices.map(n=>(r[n]||"").trim());const [name,date,...stats]=v;if(!name||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date+"T00:00:00Z")))throw Error("Invalid player or date at row "+(i+2));if(stats.some(x=>!/^\d+$/.test(x)||Number(x)>200))throw Error("Invalid statistics at row "+(i+2));const key=name+"|"+date;if(seen.has(key))throw Error("Duplicate player/date at row "+(i+2));seen.add(key);return {player:name,date,points:+stats[0],rebounds:+stats[1],assists:+stats[2]}})}
+function render(){const name=player.value,key=stat.value;const data=games.filter(x=>x.player===name).sort((a,b)=>a.date.localeCompare(b.date));if(!data.length)return;const vals=data.map(x=>x[key]);const avg=vals.reduce((a,b)=>a+b,0)/vals.length;const sorted=[...vals].sort((a,b)=>a-b);const median=sorted[Math.floor((sorted.length-1)/2)];const min=sorted[0],max=sorted.at(-1);document.querySelector("#metrics").replaceChildren(...[["Games",data.length],["Average",avg.toFixed(1)],["Median",median],["Observed range",min+"–"+max]].map(([label,value])=>{const el=document.createElement("div");el.className="metric";const s=document.createElement("small");s.textContent=label;const b=document.createElement("b");b.textContent=value;el.append(s,b);return el}));const chart=document.querySelector("#chart");chart.replaceChildren();const ns="http://www.w3.org/2000/svg";const top=Math.max(1,max);const points=vals.map((v,i)=>[30+(i*580/Math.max(1,vals.length-1)),195-v*165/top]);const poly=document.createElementNS(ns,"polyline");poly.setAttribute("points",points.map(p=>p.join(",")).join(" "));poly.setAttribute("fill","none");poly.setAttribute("stroke","#78d9ff");poly.setAttribute("stroke-width","3");poly.setAttribute("stroke-linecap","round");poly.setAttribute("stroke-linejoin","round");chart.append(poly);const tbody=document.querySelector("#rows");tbody.replaceChildren(...data.slice(-30).reverse().map(x=>{const tr=document.createElement("tr");for(const value of [x.date,x[key]]){const td=document.createElement("td");td.textContent=value;tr.append(td)}return tr}));results.hidden=false;status.textContent="Showing "+data.length+" historical games for "+name+"."}
+file.addEventListener("change",async()=>{results.hidden=true;player.disabled=true;try{const f=file.files[0];if(!f)return;if(f.size>2e6)throw Error("File exceeds 2 MB");games=load(await f.text());const names=[...new Set(games.map(x=>x.player))].sort();player.replaceChildren(...names.map(n=>{const o=document.createElement("option");o.value=n;o.textContent=n;return o}));player.disabled=false;render()}catch(e){games=[];status.textContent="Unable to load CSV: "+e.message}});
+player.addEventListener("change",render);stat.addEventListener("change",render);
+</script></body></html>
