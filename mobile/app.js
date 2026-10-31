@@ -41,14 +41,14 @@ function parseGames(raw){
     return found===undefined?-1:found;
   };
   const index={
-    player:lookup(["player","player_id"]),
-    date:lookup(["date","game_date"]),
-    points:lookup(["points"]),
-    rebounds:lookup(["rebounds"]),
-    assists:lookup(["assists"]),
-    home:lookup(["home","home_away"]),
-    opponent:lookup(["opponent","opp"]),
-    minutes:lookup(["minutes","min"]),
+    player:lookup(["player","player_id","player_name","name"]),
+    date:lookup(["date","game_date","match_date"]),
+    points:lookup(["points","pts"]),
+    rebounds:lookup(["rebounds","reb"]),
+    assists:lookup(["assists","ast"]),
+    home:lookup(["home","home_away","location"]),
+    opponent:lookup(["opponent","opp","opponent_team"]),
+    minutes:lookup(["minutes","min","mp"]),
     gameId:lookup(["game_id"])
   };
   if(["player","date",...FIELDS].some(k=>index[k]<0))
@@ -69,9 +69,12 @@ function parseGames(raw){
     }
     if(index.minutes>=0&&get("minutes")!==""){
       const v=get("minutes");
-      if(!/^\d+(?:\.\d+)?$/.test(v)||Number(v)>75)
+      const clock=/^(\d{1,2}):(\d{2})$/.exec(v);
+      const minutes=clock?Number(clock[1])+Number(clock[2])/60:Number(v);
+      if((clock&&Number(clock[2])>=60)||(!clock&&!/^\d+(?:\.\d+)?$/.test(v))||
+         !Number.isFinite(minutes)||minutes>75)
         throw Error("Invalid minutes at row "+(i+2));
-      record.minutes=Number(v);
+      record.minutes=minutes;
     }
     if(index.home>=0&&get("home")!==""){
       const rawHome=get("home").toLowerCase();
@@ -186,9 +189,12 @@ async function handleFile(){
   $("load-status").textContent="VALIDATING LOCAL CSV…";
   try{
     if(chosen.size>2_000_000)throw Error("File exceeds 2 MB limit");
+    const declaredSource=$("source-label").value.trim();
+    if(declaredSource.length<3)throw Error("Enter the data source or creator (at least 3 characters)");
+    if(!$("data-rights").checked)throw Error("Confirm permission to use this dataset");
     const imported=parseGames(await chosen.text());
     // Do not retain prior records if the new file is invalid.
-    games=imported;sourceName=chosen.name;
+    games=imported;sourceName=chosen.name+" · source declared: "+declaredSource;
     demo=/demo/i.test(chosen.name)||games.some(x=>/^DEMO[-_]/i.test(x.player)||/^SYN[-_]/i.test(x.gameId));
     const players=[...new Set(games.map(g=>g.player))].sort();
     const select=$("player");select.replaceChildren();
