@@ -83,6 +83,7 @@ main{padding:25px clamp(18px,3.5vw,56px) 50px}
 .chart-legend i{width:13px;height:2px;display:inline-block}.legend-actual{background:var(--lime)}.legend-mean{background:#63a4b8}
 .chart-box{position:relative;margin-top:18px;min-height:250px}
 .chart-box svg{width:100%;height:auto;display:block}
+.chart-empty[hidden]{display:none}
 .chart-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#8da4b0;background:radial-gradient(circle at center,#16313a,#111d2a 72%);padding:35px;font-size:13px}
 .chart-footer{border-top:1px solid #2a3a49;padding-top:11px;color:#9cb2ba;font-size:11px}
 .insight-stack{display:grid;gap:15px}
