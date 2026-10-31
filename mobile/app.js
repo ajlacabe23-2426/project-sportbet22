@@ -218,6 +218,20 @@ async function handleFile(){
     $("load-status").textContent="IMPORT REJECTED · "+error.message;
     $("quality-badge").textContent="DATASET ERROR";
     $("chart-empty").hidden=false;$("series-chart").replaceChildren();
+    $("chart-empty").textContent="No valid dataset loaded. Correct the source and file, then import again.";
+    $("dataset-details").textContent="Dataset rejected; no records are currently loaded.";
+    $("method-detail").textContent="AWAITING VALID SOURCE";
+    $("chart-footer").textContent="No historical observations loaded.";
+    $("rows-label").textContent="0 GAMES";
+    $("player").replaceChildren(new Option("Import a valid CSV first",""));
+    for(const id of ["metric-games","metric-average","metric-median","metric-range","home-average",
+                     "away-average","metric-deviation","metric-trend"])
+      $(id).textContent="—";
+    const table=$("game-rows");table.replaceChildren();
+    const row=document.createElement("tr"),cell=document.createElement("td");
+    cell.colSpan=5;cell.className="table-empty";cell.textContent="No valid game history loaded.";
+    row.append(cell);table.append(row);
+    $("csv-file").value="";
   }
 }
 $("csv-file").addEventListener("change",handleFile);
