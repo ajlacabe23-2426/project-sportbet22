@@ -1,0 +1,11 @@
+{
+  "dataset_id": "sportprob-synthetic-demo-v1",
+  "source_name": "SportProb hand-authored synthetic demonstration fixture",
+  "source_reference": "https://github.com/ajlacabe23-2426/project-sportbet22/blob/6ddc01d645615b32a5284cfa0b6deee16f68b445/data/demo_games.csv",
+  "retrieved_at": "2026-10-24T06:59:52Z",
+  "sha256": "8bfb10a5d2b0e84602b1af79ef1e75a3bd6a7d67901cc6b9780ba2ba6f6ae56b",
+  "rights_status": "cleared",
+  "rights_evidence": "Synthetic records authored in the repository; no third-party game data",
+  "permitted_purpose": "educational_research",
+  "synthetic": true
+}

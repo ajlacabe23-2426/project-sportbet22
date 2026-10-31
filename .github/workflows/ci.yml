@@ -1,0 +1,55 @@
+name: Probability lab checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/probability-lab-foundation
+      - research/frozen-holdout-evaluation-20261024
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Unit tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: End-to-end sample forecast
+        env:
+          PYTHONPATH: src
+        run: python -m sportprob.cli forecast --data data/demo_games.csv --player DEMO-001 --stat points --as-of 2025-11-21
+      - name: End-to-end backtest
+        env:
+          PYTHONPATH: src
+        run: python -m sportprob.cli backtest --data data/demo_games.csv --player DEMO-001 --stat points
+      - name: Verify offline HTML report CLI
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m sportprob.cli report
+          --data data/demo_games.csv
+          --manifest data/demo_games.manifest.json
+          --player DEMO-001 --stat points --as-of 2025-11-21
+          --output outputs/ci-report.html
+      - name: Assert report was produced
+        run: test -s outputs/ci-report.html
+      - name: Frozen holdout from checksum-verified synthetic fixture
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m sportprob.cli holdout
+          --data data/demo_games.csv
+          --manifest data/demo_games.manifest.json
+          --player DEMO-001 --stat points --start 2025-11-16
