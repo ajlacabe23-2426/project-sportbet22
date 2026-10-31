@@ -36,7 +36,7 @@
       </section>
       <section class="import-panel" aria-labelledby="source-title">
         <div class="source-head"><div class="section-index">01 / SOURCE</div><div class="source-heading"><h2 id="source-title">Dataset control</h2><p>Bring a permitted player game-log CSV. It stays on this device.</p></div></div>
-        <div class="source-action"><label class="upload-button" for="csv-file"><span aria-hidden="true">＋</span> Import game logs</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"><p id="csv-help">Accepts player/date or player_id/game_date plus points, rebounds, assists. The repository includes data/demo_games.csv for a synthetic demo.</p></div>
+        <div class="source-action"><div class="import-details"><label for="source-label">Dataset source / creator</label><input id="source-label" type="text" placeholder="e.g. My authorized game logs" maxlength="100" autocomplete="off"><label class="source-confirm"><input id="data-rights" type="checkbox"> I have permission to use this dataset for research.</label></div><label class="upload-button" for="csv-file"><span aria-hidden="true">＋</span> Import game logs</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"><p id="csv-help">Accepts player/date or player_id/game_date and points, rebounds, assists; also PTS, REB, AST header aliases. The repository includes a synthetic demo CSV. No external requests are sent.</p></div>
         <div class="source-status" role="status" id="load-status">NO DATASET LOADED <span>Choose a local CSV to begin.</span></div>
       </section>
       <section id="overview" class="overview" aria-labelledby="overview-title">
