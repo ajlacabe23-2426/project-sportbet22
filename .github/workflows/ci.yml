@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches:
+      - main
       - feat/probability-lab-foundation
       - research/frozen-holdout-evaluation-20261024
 
