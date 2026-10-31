@@ -54,3 +54,13 @@ jobs:
           --data data/demo_games.csv
           --manifest data/demo_games.manifest.json
           --player DEMO-001 --stat points --start 2025-11-16
+
+  mobile-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Offline mobile application and CSV parser checks
+        run: node --test tests/mobile-ui.test.cjs

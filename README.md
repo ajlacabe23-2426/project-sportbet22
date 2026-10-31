@@ -4,6 +4,16 @@ A **simulation-only sports statistics research platform**. SportProb estimates p
 
 **Research only:** No live betting, sportsbook data ingestion, odds comparison, wager recommendations, or bankroll calculations. All bundled observations are explicitly **synthetic**, not real player data.
 
+## Performance Desk (mobile-first offline interface)
+
+The redesigned dashboard is in `mobile/index.html`, with local `mobile/app.js` and `mobile/styles.css`. Open it directly in Safari or serve it locally with a static file server; it makes no web requests.
+
+The historical statistics importer now accepts either the research engine's `player_id,game_date,points,rebounds,assists` CSV or common `player_name,game_date,pts,reb,ast` aliases. Optional `min`, `opponent_team`, `home_away` and `game_id` fields drive observed splits and the game log. Users declare a source and usage permission before selecting an import. See [historical data import guide](docs/IMPORTING_DATA.md) and the explicitly synthetic [example template](data/IMPORT_TEMPLATE.csv).
+
+The interface reports actual loaded rows only: last-5/10/20/all, averages, medians, observed ranges, sample deviation, trailing five-game average, optional home/away splits, and a historical game table. Missing context remains unavailable. The static browser interface does not automatically acquire NBA game logs, store uploads in a server, run the CLI forecasting engine, or integrate a gambling platform. It does not establish dataset authenticity, rights or predictive accuracy.
+
+Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
+
 ## Phase 1 capabilities
 - Typed, validated CSV game-log ingestion (date, player, opponent, minutes, points/rebounds/assists).
 - Point-in-time forecasting: never trains on games dated on or after the forecast date.

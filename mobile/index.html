@@ -1,33 +1,80 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SportProb | Player Statistics Explorer</title>
-<style>
-:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#0b1220;color:#f2f6fc}
-*{box-sizing:border-box}body{margin:0}main{max-width:840px;margin:auto;padding:24px 16px 60px}
-h1{font-size:clamp(1.8rem,6vw,2.7rem);margin:0}p{line-height:1.5;color:#b5c5d9}
-.panel{background:#142136;border:1px solid #30435d;border-radius:18px;padding:18px;margin-top:18px}
-label{display:block;margin:12px 0 6px;font-weight:650}input,select{width:100%;font:inherit;padding:12px;border:1px solid #68819d;border-radius:10px;background:#09182b;color:white}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metric{background:#1c304b;padding:14px;border-radius:12px}.metric b{font-size:1.5rem;display:block}
-small{color:#b5c5d9}.notice{border-left:4px solid #e2b04a;padding-left:12px}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:10px 6px;border-bottom:1px solid #33445a}th{color:#b5c5d9}
-.scroll{overflow:auto}svg{width:100%;height:auto}.sr{position:absolute;left:-10000px}
-@media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.metric:last-child{grid-column:span 2}}
-</style></head><body><main>
-<header><small>SPORTPROB · RESEARCH PREVIEW</small><h1>Player statistics explorer</h1><p>Mobile-first, local CSV analysis. Files remain in your browser; no upload or account required.</p></header>
-<section class="panel"><label for="file">Choose a permitted game-log CSV</label><input id="file" type="file" accept=".csv,text/csv">
-<p>CSV columns: <code>player,date,points,rebounds,assists</code>, or the research engine's <code>player_id,game_date,points,rebounds,assists</code>. You can load the bundled <code>data/demo_games.csv</code> synthetic sample to test the page. Use one row per player per game. No data is fetched automatically.</p>
-<p class="notice">Descriptive historical statistics only. No wagering recommendations or claims of predictive accuracy. Confirm source rights and completeness.</p>
-<label for="player">Player</label><select id="player" disabled><option>Load a CSV first</option></select>
-<label for="stat">Statistic</label><select id="stat"><option value="points">Points</option><option value="rebounds">Rebounds</option><option value="assists">Assists</option></select>
-<p id="status" role="status">Waiting for data.</p></section>
-<section id="results" hidden><div class="grid" id="metrics"></div><div class="panel"><h2>Game-by-game history</h2><svg id="chart" viewBox="0 0 640 230" role="img" aria-label="Historical player statistics line chart"></svg><div class="scroll"><table><thead><tr><th>Date</th><th>Value</th></tr></thead><tbody id="rows"></tbody></table></div></div></section>
-</main><script>
-"use strict";
-const file=document.querySelector("#file"),player=document.querySelector("#player"),stat=document.querySelector("#stat"),status=document.querySelector("#status"),results=document.querySelector("#results");
-let games=[];
-function csvRows(input){const rows=[];let row=[],cell="",quoted=false;for(let i=0;i<input.length;i++){const c=input[i];if(c==='"'){if(quoted&&input[i+1]==='"'){cell+='"';i++}else quoted=!quoted}else if(c===","&&!quoted){row.push(cell);cell=""}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&input[i+1]==="\n")i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell=""}else cell+=c}if(quoted)throw Error("Unclosed CSV quote");row.push(cell);if(row.some(x=>x.trim()))rows.push(row);return rows}
-function load(raw){const lines=csvRows(raw);if(lines.length<2)throw Error("No game rows");const head=lines.shift().map(x=>x.trim().toLowerCase());const fields=[["player","player_id"],["date","game_date"],["points"],["rebounds"],["assists"]];const indices=fields.map(aliases=>aliases.map(x=>head.indexOf(x)).find(i=>i>=0)??-1);if(indices.some(x=>x<0))throw Error("Required columns missing (player/player_id, date/game_date, points, rebounds, assists)");if(lines.length>20000)throw Error("Too many rows (maximum 20,000)");const seen=new Set();return lines.map((r,i)=>{const v=indices.map(n=>(r[n]||"").trim());const [name,date,...stats]=v;if(!name||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date+"T00:00:00Z"))||new Date(date+"T00:00:00Z").toISOString().slice(0,10)!==date)throw Error("Invalid player or date at row "+(i+2));if(stats.some(x=>!/^\d+$/.test(x)||Number(x)>200))throw Error("Invalid statistics at row "+(i+2));const key=name+"|"+date;if(seen.has(key))throw Error("Duplicate player/date at row "+(i+2));seen.add(key);return {player:name,date,points:+stats[0],rebounds:+stats[1],assists:+stats[2]}})}
-function render(){const name=player.value,key=stat.value;const data=games.filter(x=>x.player===name).sort((a,b)=>a.date.localeCompare(b.date));if(!data.length)return;const vals=data.map(x=>x[key]);const avg=vals.reduce((a,b)=>a+b,0)/vals.length;const sorted=[...vals].sort((a,b)=>a-b);const median=sorted[Math.floor((sorted.length-1)/2)];const min=sorted[0],max=sorted.at(-1);document.querySelector("#metrics").replaceChildren(...[["Games",data.length],["Average",avg.toFixed(1)],["Median",median],["Observed range",min+"–"+max]].map(([label,value])=>{const el=document.createElement("div");el.className="metric";const s=document.createElement("small");s.textContent=label;const b=document.createElement("b");b.textContent=value;el.append(s,b);return el}));const chart=document.querySelector("#chart");chart.replaceChildren();const ns="http://www.w3.org/2000/svg";const top=Math.max(1,max);const points=vals.map((v,i)=>[30+(i*580/Math.max(1,vals.length-1)),195-v*165/top]);const poly=document.createElementNS(ns,"polyline");poly.setAttribute("points",points.map(p=>p.join(",")).join(" "));poly.setAttribute("fill","none");poly.setAttribute("stroke","#78d9ff");poly.setAttribute("stroke-width","3");poly.setAttribute("stroke-linecap","round");poly.setAttribute("stroke-linejoin","round");chart.append(poly);const tbody=document.querySelector("#rows");tbody.replaceChildren(...data.slice(-30).reverse().map(x=>{const tr=document.createElement("tr");for(const value of [x.date,x[key]]){const td=document.createElement("td");td.textContent=value;tr.append(td)}return tr}));results.hidden=false;status.textContent="Showing "+data.length+" historical games for "+name+"."}
-file.addEventListener("change",async()=>{results.hidden=true;player.disabled=true;try{const f=file.files[0];if(!f)return;if(f.size>2e6)throw Error("File exceeds 2 MB");games=load(await f.text());const names=[...new Set(games.map(x=>x.player))].sort();player.replaceChildren(...names.map(n=>{const o=document.createElement("option");o.value=n;o.textContent=n;return o}));player.disabled=false;render()}catch(e){games=[];status.textContent="Unable to load CSV: "+e.message}});
-player.addEventListener("change",render);stat.addEventListener("change",render);
-</script></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="SportProb: an offline, descriptive player-performance research desk.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; connect-src 'none'">
+<title>SportProb — Player Performance Desk</title>
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" aria-label="Workspace navigation">
+    <a class="identity" href="#top"><span class="mark" aria-hidden="true">SP<span>.</span></span><span class="identity-name">SPORTPROB<small>PERFORMANCE LAB</small></span></a>
+    <div class="nav-label">WORKSPACE</div>
+    <a class="nav-link active" href="#overview"><span aria-hidden="true">◉</span> Player overview</a>
+    <a class="nav-link" href="#history"><span aria-hidden="true">▤</span> Game history</a>
+    <a class="nav-link" href="#integrity"><span aria-hidden="true">◇</span> Data integrity</a>
+    <div class="sidebar-bottom"><span class="status-dot" aria-hidden="true"></span> LOCAL RESEARCH <p>Offline browser analytics. No account, data transfer, or live service.</p></div>
+  </aside>
+  <div class="workspace" id="top">
+    <header class="topbar">
+      <div class="breadcrumb">SPORTPROB <span>/</span> PERFORMANCE DESK <span class="topbar-version">V2 PREVIEW</span></div>
+      <div class="topbar-right"><span class="status-dot" aria-hidden="true"></span> OFFLINE MODE</div>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy"><div class="eyebrow"><span class="eyebrow-line"></span> BASKETBALL / PLAYER INTELLIGENCE</div>
+          <h1 id="hero-title">Make sense of<br><em>the performance.</em></h1>
+          <p>Explore historical production, trends, and game context in one focused research workspace.</p>
+          <div class="hero-tags"><span>COMPLETED GAMES</span><span>TRANSPARENT METHODS</span><span>LOCAL DATA</span></div>
+        </div>
+        <div class="hero-graphic" aria-hidden="true"><div class="court-circle outer"></div><div class="court-circle inner"></div><div class="court-line one"></div><div class="court-line two"></div><div class="hero-number">01 <span>/</span> 03</div></div>
+      </section>
+      <section class="import-panel" aria-labelledby="source-title">
+        <div class="source-head"><div class="section-index">01 / SOURCE</div><div class="source-heading"><h2 id="source-title">Dataset control</h2><p>Bring a permitted player game-log CSV. It stays on this device.</p></div></div>
+        <div class="source-action"><div class="import-details"><label for="source-label">Dataset source / creator</label><input id="source-label" type="text" placeholder="e.g. My authorized game logs" maxlength="100" autocomplete="off"><label class="source-confirm"><input id="data-rights" type="checkbox"> I have permission to use this dataset for research.</label></div><label class="upload-button" for="csv-file"><span aria-hidden="true">＋</span> Import game logs</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"><p id="csv-help">Accepts player/date or player_id/game_date and points, rebounds, assists; also PTS, REB, AST header aliases. The repository includes a synthetic demo CSV. No external requests are sent.</p></div>
+        <div class="source-status" role="status" id="load-status">NO DATASET LOADED <span>Choose a local CSV to begin.</span></div>
+      </section>
+      <section id="overview" class="overview" aria-labelledby="overview-title">
+        <div class="section-heading"><div><div class="section-index">02 / PLAYER ANALYSIS</div><h2 id="overview-title">Performance overview<span class="accent">.</span></h2></div><div id="quality-badge" class="quality-badge">AWAITING SOURCE</div></div>
+        <div class="filters">
+          <div class="field"><label for="player">Player</label><select id="player" disabled><option value="">Import a CSV first</option></select></div>
+          <div class="field"><label for="stat">Metric</label><select id="stat" disabled><option value="points">Points</option><option value="rebounds">Rebounds</option><option value="assists">Assists</option></select></div>
+          <fieldset class="range-field" disabled><legend>Sample window</legend><div class="range-group"><button type="button" data-range="5">LAST 5</button><button type="button" data-range="10" aria-pressed="true">LAST 10</button><button type="button" data-range="20">LAST 20</button><button type="button" data-range="all">ALL</button></div></fieldset>
+        </div>
+        <div class="metrics" aria-label="Observed performance metrics">
+          <article class="metric"><div class="metric-title">GAMES IN VIEW</div><strong id="metric-games">—</strong><small id="metric-games-caption">Awaiting dataset</small></article>
+          <article class="metric"><div class="metric-title">AVERAGE <span id="metric-unit">PTS</span></div><strong id="metric-average">—</strong><small>Observed per-game mean</small></article>
+          <article class="metric"><div class="metric-title">MEDIAN</div><strong id="metric-median">—</strong><small>Middle observed value</small></article>
+          <article class="metric"><div class="metric-title">OBSERVED RANGE</div><strong id="metric-range">—</strong><small>Minimum – maximum</small></article>
+        </div>
+        <div class="analysis-grid">
+          <article class="panel chart-panel">
+            <div class="panel-heading"><div><div class="panel-kicker">GAME-BY-GAME SERIES</div><h3 id="chart-title">Historical performance</h3></div><div class="chart-legend"><span><i class="legend-actual"></i> OBSERVED</span><span><i class="legend-mean"></i> 5-GAME MEAN</span></div></div>
+            <div class="chart-box"><svg id="series-chart" viewBox="0 0 760 305" role="img" aria-label="Historical selected player statistic chart" preserveAspectRatio="xMidYMid meet"></svg><div id="chart-empty" class="chart-empty">No data yet. Import game logs above to see an observed performance series.</div></div>
+            <div class="chart-footer" id="chart-footer">No historical observations loaded.</div>
+          </article>
+          <div class="insight-stack">
+            <article class="panel breakdown"><div class="panel-kicker">OBSERVED CONTEXT</div><h3>Split analysis</h3><div class="breakdown-row"><span>Home average</span><strong id="home-average">—</strong></div><div class="breakdown-row"><span>Away average</span><strong id="away-average">—</strong></div><div class="breakdown-row"><span>Sample deviation</span><strong id="metric-deviation">—</strong></div><div class="breakdown-row"><span>Last 5 vs previous 5</span><strong id="metric-trend">—</strong></div><p class="context-note" id="context-note">Load games with optional home/away fields for split comparisons.</p></article>
+            <article class="panel methodology"><div class="panel-kicker">METHOD / TRANSPARENCY</div><h3>Read the context</h3><p>All numbers describe observed records, not future games. A short or incomplete sample can distort averages and trends.</p><div id="method-detail" class="method-chip">AWAITING SOURCE</div></article>
+          </div>
+        </div>
+      </section>
+      <section id="history" class="panel log-panel" aria-labelledby="history-title">
+        <div class="panel-heading"><div><div class="panel-kicker">03 / GAME HISTORY</div><h2 id="history-title">Observation log<span class="accent">.</span></h2></div><span id="rows-label" class="rows-label">0 GAMES</span></div>
+        <div class="table-scroll"><table><thead><tr><th>Date</th><th>Opponent</th><th>Location</th><th>Minutes</th><th id="metric-column">PTS</th></tr></thead><tbody id="game-rows"><tr><td colspan="5" class="table-empty">Import a dataset to populate the game history.</td></tr></tbody></table></div>
+      </section>
+      <section id="integrity" class="integrity-panel" aria-labelledby="integrity-title">
+        <div><div class="section-index">DATA INTELLIGENCE</div><h2 id="integrity-title">Trust the method,<br><em>question the sample.</em></h2></div>
+        <div class="integrity-copy"><p id="dataset-details">No dataset has been inspected. All files are read locally, with no network requests.</p><p>Source labels and file integrity checks do not independently verify authenticity, completeness, or usage rights. Demo observations are synthetic.</p></div>
+      </section>
+    </main>
+    <footer class="footer"><span>SPORTPROB / RESEARCH WORKSPACE</span><span>HISTORICAL DESCRIPTIVE ANALYTICS ONLY · NO FORECASTS OR WAGERING FEATURES</span></footer>
+  </div>
+</div>
+</body>
+</html>

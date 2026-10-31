@@ -1,0 +1,3 @@
+player_name,game_date,pts,reb,ast,min,opponent_team,home_away,game_id
+EXAMPLE-PLAYER,2026-01-10,18,6,4,28:30,EXAMPLE-OPP,home,SYN-EXAMPLE-001
+EXAMPLE-PLAYER,2026-01-12,24,8,7,31:15,EXAMPLE-OPP-2,away,SYN-EXAMPLE-002
