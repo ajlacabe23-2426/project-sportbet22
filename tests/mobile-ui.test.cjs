@@ -59,3 +59,25 @@ test("quoted CSV context fields remain literal data, never markup",()=>{
   const data=loadParser()(input);
   assert.equal(data[0].opponent,'Team "Example"');
 });
+
+test("common shorthand stats exports and MM:SS duration import without rounding minutes to a whole game",()=>{
+  const csv=fs.readFileSync(path.join(root,"data/IMPORT_TEMPLATE.csv"),"utf8");
+  const result=loadParser()(csv);
+  assert.equal(result.length,2);
+  assert.equal(result[0].player,"EXAMPLE-PLAYER");
+  assert.equal(result[0].points,18);
+  assert.equal(result[0].rebounds,6);
+  assert.equal(result[0].assists,4);
+  assert.equal(result[0].minutes,28.5);
+  assert.equal(result[0].home,true);
+  assert.equal(result[1].home,false);
+  assert.equal(result[0].opponent,"EXAMPLE-OPP");
+});
+
+test("import form requires a source declaration and acknowledgement",()=>{
+  const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
+  assert.match(html,/id="source-label"/);
+  assert.match(html,/id="data-rights"/);
+  assert.match(script,/Confirm permission to use this dataset/);
+  assert.match(script,/Enter the data source or creator/);
+});
