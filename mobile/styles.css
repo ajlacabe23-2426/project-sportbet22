@@ -45,6 +45,11 @@ main{padding:25px clamp(18px,3.5vw,56px) 50px}
 .source-heading h2{font-size:20px;margin:0 0 3px;letter-spacing:-.03em}
 .source-heading p,.source-action p{margin:0;color:#9eb2bf;font-size:12px;line-height:1.55}
 .source-action{text-align:right;align-self:center}
+.import-details{text-align:left;margin:0 0 13px;display:grid;gap:7px}
+.import-details>label:first-child{font-size:10px;font-weight:800;color:#9ab3bd;letter-spacing:.08em}
+.import-details>input{background:#071520;border:1px solid #47606a;border-radius:5px;color:#eef6f1;padding:9px;width:100%}
+.import-details .source-confirm{font-size:11px;letter-spacing:0;font-weight:500;color:#c1d5d5;display:flex;gap:8px;align-items:start}
+.source-confirm input{accent-color:#d9fc77;margin-top:4px}
 .upload-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:11px 18px;background:var(--lime);color:#152018;font-size:12px;letter-spacing:.035em;font-weight:900;border-radius:5px;cursor:pointer}
 .upload-button:hover{background:#eefda2}
 .upload-button span{font-size:20px;line-height:1}
