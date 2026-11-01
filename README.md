@@ -42,6 +42,38 @@ python -m pip install -e .
 python -m sportprob.cli --help
 ```
 
+## Compare model distributions on a frozen historical holdout
+
+The Python research CLI can evaluate **two uncalibrated count-distribution assumptions**
+against the same completely withheld completed games: the existing Gamma–Poisson /
+negative-binomial baseline and a Poisson benchmark with the **same estimated mean**.
+This isolates distributional dispersion; it is not a bet-ranking or selection feature.
+
+Run the following from the repository root after choosing the holdout cutoff
+**before looking at its outcomes**:
+
+```bash
+PYTHONPATH=src python3 -m sportprob.cli compare \
+  --data data/demo_games.csv \
+  --manifest data/demo_games.manifest.json \
+  --player DEMO-001 --stat points \
+  --start 2025-11-16
+```
+
+The comparison requires a research-permissions manifest and SHA-256 match.
+It reports negative log likelihood, ranked probability score (lower is better),
+mean absolute error, signed bias, 80%/90% prediction interval coverage,
+80% interval width, and Wilson confidence intervals around measured coverage.
+**All predictions in the holdout use only training observations before the
+chosen cutoff**, with no fitting on earlier holdout outcomes.
+
+The bundled sample contains only **five synthetic holdout games**. Such a
+comparison demonstrates software behavior, not reliable NBA calibration or
+evidence that one model will generalize. Meaningful external validation
+requires many independently sourced, legally permitted games across time,
+players, and seasons, plus a separate untouched evaluation dataset.
+The program does not ingest sportsbook information or produce wagering actions.
+
 ## Accuracy and interpretation
 A single most-likely 5-point bucket might have only 30% probability. A wider 80% interval is a **model-based prediction interval**, not a guarantee. In particular, the v1 dispersion values are research defaults and **not fitted or calibrated against actual NBA game data**. Run walk-forward backtests on licensed/authorized real data before interpreting any reliability claim. Compare forecasts produced before each event to later observations; do not permit revisions or post-game knowledge to leak into historic features.
 
