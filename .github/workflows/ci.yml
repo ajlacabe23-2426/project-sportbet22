@@ -31,6 +31,15 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m sportprob.cli forecast --data data/demo_games.csv --player DEMO-001 --stat points --as-of 2025-11-21
+      - name: Check retrospective player context on synthetic records
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m sportprob.cli history
+          --data data/demo_games.csv
+          --manifest data/demo_games.manifest.json
+          --player DEMO-001 --stat points --as-of 2025-11-21
+          --history-games 20
       - name: End-to-end backtest
         env:
           PYTHONPATH: src
