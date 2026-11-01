@@ -15,6 +15,7 @@ from .holdout import evaluate_frozen_holdout
 from .model import forecast
 from .report import render_forecast_report, save_forecast_report
 from .schema import STATS
+from .historical_context import describe_historical_context
 
 
 def main() -> None:
@@ -22,7 +23,7 @@ def main() -> None:
         prog="sportprob", description="Simulation-only player performance research"
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("forecast", "backtest", "holdout", "report", "compare"):
+    for name in ("forecast", "backtest", "holdout", "report", "compare", "history"):
         command = commands.add_parser(name)
         command.add_argument("--data", required=True, help="authorized game-log CSV")
         command.add_argument("--player", required=True, help="stable player ID")
@@ -46,10 +47,31 @@ def main() -> None:
     compare_parser.add_argument("--end", default=None, help="optional exclusive YYYY-MM-DD")
     compare_parser.add_argument("--output", default=None, help="optional offline JSON dashboard import path")
     compare_parser.add_argument("--overwrite", action="store_true", help="explicitly overwrite existing JSON audit")
+    history_parser = commands.choices["history"]
+    history_parser.add_argument("--manifest", required=True, help="research source/checksum manifest")
+    history_parser.add_argument("--as-of", required=True, help="strict exclusive YYYY-MM-DD cutoff")
+    history_parser.add_argument("--history-games", type=int, default=40)
     args = parser.parse_args()
     try:
         logs = load_game_logs(args.data)
-        if args.command == "forecast":
+        if args.command == "history":
+            manifest = DatasetManifest.from_file(args.manifest)
+            verified_hash = verify_snapshot(args.data, manifest)
+            profile = describe_historical_context(
+                logs, args.player, args.stat,
+                date.fromisoformat(args.as_of),
+                history_games=args.history_games,
+            )
+            output = {
+                **asdict(profile),
+                "synthetic": manifest.synthetic,
+                "dataset_id": manifest.dataset_id,
+                "source_name": manifest.source_name,
+                "dataset_sha256": verified_hash,
+                "rights_independently_verified": False,
+                "real_world_accuracy_verified": False,
+            }
+        elif args.command == "forecast":
             prediction = forecast(
                 logs, args.player, args.stat, date.fromisoformat(args.as_of),
                 projected_minutes=args.minutes,
