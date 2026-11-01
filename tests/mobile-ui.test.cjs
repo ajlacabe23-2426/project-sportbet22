@@ -85,7 +85,7 @@ test("import form requires a source declaration and acknowledgement",()=>{
 const auditScript=fs.readFileSync(path.join(root,"mobile/audit.js"),"utf8");
 function auditParser(){
   const module={exports:{}};
-  const document={getElementById:()=>({addEventListener:()=>{}})};
+  const document={getElementById:()=>({addEventListener:()=>{}}),addEventListener:()=>{}};
   vm.runInNewContext(auditScript,{module,document},{filename:"mobile/audit.js"});
   return module.exports.parseAuditJSON;
 }
@@ -158,7 +158,7 @@ test("offline CSV fingerprint matches Python's checked synthetic input byte-for-
   assert.notEqual(await helper.sha256ArrayBuffer(modified,webcrypto),manifest.sha256);
   assert.equal(await helper.sha256ArrayBuffer(buffer,null),null,"nonsecure/unsupported browser must report unavailable, not match");
 });
-test("audit/CVS linking is fail-closed on absent or different source, player and statistic",()=>{
+test("audit/CSV linking is fail-closed on absent or different source, player and statistic",()=>{
   const {assessAuditLink}=loadIntegrity();
   const audit=validAudit(),dataset={sha256:audit.dataset_sha256,players:["DEMO-001"],synthetic:true};
   assert.equal(assessAuditLink(audit,null,"DEMO-001","points").status,"NO_DATASET");
