@@ -153,7 +153,7 @@ test("offline CSV fingerprint matches Python's checked synthetic input byte-for-
   const manifest=JSON.parse(fs.readFileSync(path.join(root,"data/demo_games.manifest.json"),"utf8"));
   const buffer=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
   assert.equal(await helper.sha256ArrayBuffer(buffer,webcrypto),manifest.sha256);
-  const tampered=Buffer.concat([bytes,Buffer.from("\\n")]);
+  const tampered=Buffer.concat([bytes,Buffer.from([10])]);
   const modified=tampered.buffer.slice(tampered.byteOffset,tampered.byteOffset+tampered.byteLength);
   assert.notEqual(await helper.sha256ArrayBuffer(modified,webcrypto),manifest.sha256);
   assert.equal(await helper.sha256ArrayBuffer(buffer,null),null,"nonsecure/unsupported browser must report unavailable, not match");
@@ -168,16 +168,15 @@ test("audit/CVS linking is fail-closed on absent or different source, player and
   assert.equal(assessAuditLink(audit,dataset,"DEMO-001","rebounds").status,"SELECTION_MISMATCH");
   assert.equal(assessAuditLink(audit,dataset,"DEMO-001","points").status,"BYTES_MATCHED");
 });
-test("integrity application wires dataset replacement to audit re-evaluation with no web requests",()=>{
+test("integrity application wires dataset replacement to audit re-evaluation without networking",()=>{
   const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
-  assert.match(html,/src="\\.\\/integrity\\.js"/);
-  for(const id of ["csv-sha256","audit-link"])
-    assert.match(html,new RegExp('id="'+id+'"'));
-  assert.match(script,/SportProbIntegrity\\.sha256ArrayBuffer\\(bytes\\)/);
-  assert.match(script,/sportprob:dataset-change/);
-  assert.match(auditScript,/document\\.addEventListener\\("sportprob:dataset-change"/);
+  assert.ok(html.includes('src="./integrity.js"'));
+  for(const id of ["csv-sha256","audit-link"])assert.ok(html.includes('id="'+id+'"'));
+  assert.ok(script.includes("SportProbIntegrity.sha256ArrayBuffer(bytes)"));
+  assert.ok(script.includes("sportprob:dataset-change"));
+  assert.ok(auditScript.includes('document.addEventListener("sportprob:dataset-change"'));
   for(const source of [script,auditScript,integrityScript]){
-    assert.doesNotMatch(source,/\\bfetch\\s*\\(/);
-    assert.doesNotMatch(source,/\\binnerHTML\\b/);
+    assert.equal(source.includes("fetch("),false);
+    assert.equal(source.includes("innerHTML"),false);
   }
 });
