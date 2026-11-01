@@ -6,6 +6,11 @@ const SVGN="http://www.w3.org/2000/svg";
 const FIELDS=["points","rebounds","assists"];
 const SHORT={points:"PTS",rebounds:"REB",assists:"AST"};
 let games=[],sampleRange="10",sourceName="",demo=false;
+let importSequence=0;
+window.SportProbDataset=null;
+function announceDatasetChange(){
+  document.dispatchEvent(new Event("sportprob:dataset-change"));
+}
 const validDate=value=>{
   if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
   const stamp=Date.parse(value+"T00:00:00.000Z");
@@ -185,6 +190,7 @@ function setBusy(busy){
 async function handleFile(){
   const chosen=$("csv-file").files?.[0];
   if(!chosen)return;
+  const currentImport=++importSequence;
   setBusy(true);
   $("load-status").textContent="VALIDATING LOCAL CSV…";
   try{
@@ -192,11 +198,20 @@ async function handleFile(){
     const declaredSource=$("source-label").value.trim();
     if(declaredSource.length<3)throw Error("Enter the data source or creator (at least 3 characters)");
     if(!$("data-rights").checked)throw Error("Confirm permission to use this dataset");
-    const imported=parseGames(await chosen.text());
+    const bytes=await chosen.arrayBuffer();
+    if(currentImport!==importSequence)return;
+    // Validate the exact bytes used for analysis, not a reconstructed CSV string.
+    const imported=parseGames(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+    const hash=await window.SportProbIntegrity.sha256ArrayBuffer(bytes);
+    if(currentImport!==importSequence)return;
     // Do not retain prior records if the new file is invalid.
     games=imported;sourceName=chosen.name+" · source declared: "+declaredSource;
     demo=/demo/i.test(chosen.name)||games.some(x=>/^DEMO[-_]/i.test(x.player)||/^SYN[-_]/i.test(x.gameId));
     const players=[...new Set(games.map(g=>g.player))].sort();
+    window.SportProbDataset={sha256:hash,players,synthetic:demo,records:games.length};
+    $("csv-sha256").textContent=hash
+      ?"CSV SHA-256: "+hash+" · exact local file bytes"
+      :"CSV SHA-256 unavailable in this browser. Matching audit inputs cannot be confirmed.";
     const select=$("player");select.replaceChildren();
     for(const name of players){const opt=document.createElement("option");opt.value=name;opt.textContent=name;select.append(opt)}
     $("stat").value="points";
@@ -213,8 +228,11 @@ async function handleFile(){
       :"LOCAL DATASET LOADED · "+games.length+" ROWS · SOURCE UNVERIFIED";
     setBusy(false);
     render();
+    announceDatasetChange();
   }catch(error){
-    games=[];sourceName="";demo=false;setBusy(true);
+    if(currentImport!==importSequence)return;
+    games=[];sourceName="";demo=false;window.SportProbDataset=null;setBusy(true);
+    $("csv-sha256").textContent="No verified CSV fingerprint.";
     $("load-status").textContent="IMPORT REJECTED · "+error.message;
     $("quality-badge").textContent="DATASET ERROR";
     $("chart-empty").hidden=false;$("series-chart").replaceChildren();
@@ -232,6 +250,7 @@ async function handleFile(){
     cell.colSpan=5;cell.className="table-empty";cell.textContent="No valid game history loaded.";
     row.append(cell);table.append(row);
     $("csv-file").value="";
+    announceDatasetChange();
   }
 }
 $("csv-file").addEventListener("change",handleFile);
