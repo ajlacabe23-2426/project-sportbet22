@@ -106,3 +106,10 @@ jobs:
           node-version: "22"
       - name: Offline mobile application and CSV parser checks
         run: node --test tests/mobile-ui.test.cjs
+      - name: Test actual offline CSV/audit import in headless Chromium
+        env:
+          RUN_BROWSER_ACCEPTANCE: "1"
+          CHROME_BIN: /usr/bin/google-chrome
+        run: |
+          command -v "$CHROME_BIN"
+          node --test tests/mobile-browser.test.cjs
