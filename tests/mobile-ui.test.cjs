@@ -111,10 +111,10 @@ function validAudit(){
 }
 test("offline model-audit interface parses strict, explicitly uncalibrated diagnostics",()=>{
   assert.doesNotThrow(()=>new vm.Script(auditScript));
-  assert.doesNotMatch(auditScript,/\\bfetch\\s*\\(/);
-  assert.doesNotMatch(auditScript,/\\binnerHTML\\b/);
+  assert.doesNotMatch(auditScript,/\bfetch\s*\(/);
+  assert.doesNotMatch(auditScript,/\binnerHTML\b/);
   const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
-  assert.match(html,/src="\\.\\/audit\\.js"/);
+  assert.match(html,/src="\.\/audit\.js"/);
   for(const id of ["model-audit","audit-json","audit-status","audit-meta","audit-rows"])
     assert.match(html,new RegExp('id="'+id+'"'));
   const parsed=auditParser()(JSON.stringify(validAudit()));
