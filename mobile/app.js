@@ -252,6 +252,7 @@ async function handleFile(){
     games=[];sourceName="";demo=false;globalThis.SportProbDataset=null;setBusy(true);
     $("csv-sha256").textContent="No verified CSV fingerprint.";
     $("load-status").textContent="IMPORT REJECTED · "+error.message;
+    $("load-status").scrollIntoView({behavior:"smooth",block:"center"});
     $("quality-badge").textContent="DATASET ERROR";
     $("chart-empty").hidden=false;$("series-chart").replaceChildren();
     $("chart-empty").textContent="No valid dataset loaded. Correct the source and file, then import again.";
