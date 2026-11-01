@@ -7,6 +7,7 @@ from datetime import date
 import json
 
 from .evaluate import backtest
+from .compare import compare_frozen_distributions
 from .ingest import load_game_logs
 from .governance import DatasetManifest, verify_snapshot
 from .holdout import evaluate_frozen_holdout
@@ -20,7 +21,7 @@ def main() -> None:
         prog="sportprob", description="Simulation-only player performance research"
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("forecast", "backtest", "holdout", "report"):
+    for name in ("forecast", "backtest", "holdout", "report", "compare"):
         command = commands.add_parser(name)
         command.add_argument("--data", required=True, help="authorized game-log CSV")
         command.add_argument("--player", required=True, help="stable player ID")
@@ -38,6 +39,10 @@ def main() -> None:
     holdout_parser.add_argument("--manifest", required=True, help="research rights/checksum manifest")
     holdout_parser.add_argument("--start", required=True, help="first withheld YYYY-MM-DD")
     holdout_parser.add_argument("--end", default=None, help="optional exclusive YYYY-MM-DD")
+    compare_parser = commands.choices["compare"]
+    compare_parser.add_argument("--manifest", required=True, help="research rights/checksum manifest")
+    compare_parser.add_argument("--start", required=True, help="first withheld YYYY-MM-DD")
+    compare_parser.add_argument("--end", default=None, help="optional exclusive YYYY-MM-DD")
     args = parser.parse_args()
     try:
         logs = load_game_logs(args.data)
@@ -66,6 +71,29 @@ def main() -> None:
                 "research_only": True,
                 "model_status": "uncalibrated research baseline",
                 **asdict(backtest(logs, args.player, args.stat)),
+            }
+        elif args.command == "compare":
+            manifest = DatasetManifest.from_file(args.manifest)
+            verified_hash = verify_snapshot(args.data, manifest)
+            comparison = compare_frozen_distributions(
+                logs, args.player, args.stat,
+                holdout_start=date.fromisoformat(args.start),
+                holdout_end_exclusive=date.fromisoformat(args.end) if args.end else None,
+            )
+            output = {
+                "research_only": True,
+                "synthetic": manifest.synthetic,
+                "source_name": manifest.source_name,
+                "dataset_id": manifest.dataset_id,
+                "dataset_sha256": verified_hash,
+                "rights_are_not_independently_verified": True,
+                "model_status": "both distributional assumptions uncalibrated",
+                "interpretation": (
+                    "Synthetic demonstration, not evidence of real-world calibration"
+                    if manifest.synthetic else
+                    "Descriptive evaluation only; real-world calibration not established"
+                ),
+                **asdict(comparison),
             }
         elif args.command == "report":
             manifest = DatasetManifest.from_file(args.manifest)
