@@ -64,6 +64,30 @@ jobs:
           --manifest data/demo_games.manifest.json
           --player DEMO-001 --stat points --start 2025-11-16
 
+      - name: Validate local research-data readiness with checksum-confirmed synthetic fixture
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m sportprob.research_check
+          --data data/demo_games.csv
+          --manifest data/demo_games.manifest.json
+          --player DEMO-001
+          --train-end 2025-11-11
+          --holdout-start 2025-11-16
+      - name: Normalize an authorized synthetic fixture into ignored local dataset storage
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m sportprob.prepare
+          --input data/demo_games.csv
+          --data-out data/processed/ci-demo-normalized.csv
+          --manifest-out data/processed/ci-demo-normalized.manifest.json
+          --dataset-id ci-synthetic-test
+          --source-name "SportProb authored synthetic fixture"
+          --source-reference "local://synthetic-demo"
+          --rights-evidence "SportProb original synthetic test data generated for validation"
+          --confirm-authorized --synthetic
+
   mobile-ui:
     runs-on: ubuntu-latest
     steps:
