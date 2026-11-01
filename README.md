@@ -14,6 +14,33 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Connect the probability engine to the dashboard (offline)
+
+The Python CLI can now export frozen historical model comparisons to a
+**versioned JSON file**, which the redesigned Safari dashboard displays in its
+**Model validation** section. Start with the bundled **synthetic demonstration**
+before importing any authorized real game records:
+
+```bash
+PYTHONPATH=src python3.12 -m sportprob.cli compare \
+  --data data/demo_games.csv \
+  --manifest data/demo_games.manifest.json \
+  --player DEMO-001 --stat points --start 2025-11-16 \
+  --output outputs/demo-model-audit.json
+open -a Safari mobile/index.html
+```
+
+In Safari, select `data/demo_games.csv` after declaring its source and
+permission, then import `outputs/demo-model-audit.json` in **Model
+validation**. The Python CLI checks the source CSV against its supplied
+manifest; the browser shows the report and its SHA-256 but does not recompute
+a checksum for another CSV loaded separately. Do not treat the demonstration
+as NBA calibration or use unlicensed provider data.
+
+Read [complete offline connection instructions](docs/CONNECTING_ENGINE.md).
+There is **no automatic NBA.com or sportsbook data feed** connected to this
+research dashboard.
+
 ## Phase 1 capabilities
 - Typed, validated CSV game-log ingestion (date, player, opponent, minutes, points/rebounds/assists).
 - Point-in-time forecasting: never trains on games dated on or after the forecast date.
