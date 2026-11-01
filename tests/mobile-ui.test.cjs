@@ -190,3 +190,27 @@ test("integrity application wires dataset replacement to audit re-evaluation wit
     assert.equal(source.includes("innerHTML"),false);
   }
 });
+
+
+test("multi-season player history accepts separate game IDs on the same calendar day",()=>{
+  const parse=loadParser();
+  const header="player_name,game_date,pts,reb,ast,min,opponent_team,home_away,game_id\n";
+  const records=[
+    "Example Player,2025-01-21,19,6,4,28.5,ESPN_TEAM_1,home,ESPN-102",
+    "Example Player,2025-01-21,24,5,7,33,ESPN_TEAM_2,away,ESPN-103",
+    "Example Player,2026-04-17,27,6,3,36,ESPN_TEAM_3,away,ESPN-900"
+  ];
+  const parsed=parse(header+records.join("\n")+"\n");
+  assert.equal(parsed.length,3);
+  assert.equal(parsed[0].gameId,"ESPN-102");
+  assert.equal(parsed[1].gameId,"ESPN-103");
+  assert.equal(parsed[2].date,"2026-04-17");
+});
+test("multi-season importer still rejects repeat game IDs and ambiguous same-day rows",()=>{
+  const parse=loadParser();
+  const header="player_name,game_date,pts,reb,ast,min,opponent_team,home_away,game_id\n";
+  const line=(date,id)=>"Example Player,"+date+",19,6,4,28.5,ESPN_TEAM_1,home,"+id+"\n";
+  assert.throws(()=>parse(header+line("2025-01-21","G1")+line("2025-01-23","G1")) ,/Duplicate player\/game ID/);
+  assert.throws(()=>parse(header+line("2025-01-21","")+line("2025-01-21","G2")) ,/Ambiguous same-day/);
+  assert.throws(()=>parse(header+line("2025-01-21","G2")+line("2025-01-21","")) ,/Duplicate player and game date/);
+});

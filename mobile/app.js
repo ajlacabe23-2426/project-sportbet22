@@ -59,7 +59,7 @@ function parseGames(raw){
   if(["player","date",...FIELDS].some(k=>index[k]<0))
     throw Error("Required columns: player/date or player_id/game_date, points, rebounds, assists");
   if(lines.length>20000)throw Error("CSV exceeds 20,000 game rows");
-  const seen=new Set(),seenGameIds=new Set();
+  const seenDates=new Set(),seenDatesWithoutGameId=new Set(),seenGameIds=new Set();
   const todayUTC=new Date().toISOString().slice(0,10);
   const parsed=lines.map((columns,i)=>{
     if(columns.length!==header.length)throw Error("CSV row "+(i+2)+" has a different number of columns");
@@ -92,14 +92,22 @@ function parseGames(raw){
       else if(["false","0","away","a"].includes(rawHome))record.home=false;
       else throw Error("Invalid home/away value at row "+(i+2));
     }
-    const unique=player+"|"+date;
-    if(seen.has(unique))throw Error("Duplicate player and game date at row "+(i+2));
-    seen.add(unique);
+    // A player can have two distinct games on one calendar date (e.g. source
+    // reschedules or exhibitions). Only accept repeated dates if EVERY
+    // corresponding row has an explicit, distinct stable game identifier.
+    // Missing IDs make same-day identity ambiguous, so fail closed.
+    const unique=JSON.stringify([player,date]);
     if(record.gameId){
       const gameIdentity=JSON.stringify([player,record.gameId]);
       if(seenGameIds.has(gameIdentity))throw Error("Duplicate player/game ID at row "+(i+2));
+      if(seenDatesWithoutGameId.has(unique))
+        throw Error("Ambiguous same-day game without stable ID at row "+(i+2));
       seenGameIds.add(gameIdentity);
+    }else{
+      if(seenDates.has(unique))throw Error("Duplicate player and game date without stable game ID at row "+(i+2));
+      seenDatesWithoutGameId.add(unique);
     }
+    seenDates.add(unique);
     return record;
   });
   parsed.sort((a,b)=>a.date.localeCompare(b.date)||a.player.localeCompare(b.player));
@@ -244,6 +252,7 @@ async function handleFile(){
     games=[];sourceName="";demo=false;globalThis.SportProbDataset=null;setBusy(true);
     $("csv-sha256").textContent="No verified CSV fingerprint.";
     $("load-status").textContent="IMPORT REJECTED · "+error.message;
+    $("load-status").scrollIntoView({behavior:"smooth",block:"center"});
     $("quality-badge").textContent="DATASET ERROR";
     $("chart-empty").hidden=false;$("series-chart").replaceChildren();
     $("chart-empty").textContent="No valid dataset loaded. Correct the source and file, then import again.";
