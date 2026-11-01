@@ -139,3 +139,45 @@ test("offline model-audit viewer rejects forged and malformed source data",()=>{
   duplicates.scores[1].model=duplicates.scores[0].model;
   assert.throws(()=>parse(JSON.stringify(duplicates)),/Unexpected model/);
 });
+
+const {webcrypto}=require("node:crypto");
+const integrityScript=fs.readFileSync(path.join(root,"mobile/integrity.js"),"utf8");
+function loadIntegrity(){
+  const module={exports:{}};
+  vm.runInNewContext(integrityScript,{module,crypto:webcrypto},{filename:"mobile/integrity.js"});
+  return module.exports;
+}
+test("offline CSV fingerprint matches Python's checked synthetic input byte-for-byte",async()=>{
+  const helper=loadIntegrity();
+  const bytes=fs.readFileSync(path.join(root,"data/demo_games.csv"));
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,"data/demo_games.manifest.json"),"utf8"));
+  const buffer=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
+  assert.equal(await helper.sha256ArrayBuffer(buffer,webcrypto),manifest.sha256);
+  const tampered=Buffer.concat([bytes,Buffer.from("\\n")]);
+  const modified=tampered.buffer.slice(tampered.byteOffset,tampered.byteOffset+tampered.byteLength);
+  assert.notEqual(await helper.sha256ArrayBuffer(modified,webcrypto),manifest.sha256);
+  assert.equal(await helper.sha256ArrayBuffer(buffer,null),null,"nonsecure/unsupported browser must report unavailable, not match");
+});
+test("audit/CVS linking is fail-closed on absent or different source, player and statistic",()=>{
+  const {assessAuditLink}=loadIntegrity();
+  const audit=validAudit(),dataset={sha256:audit.dataset_sha256,players:["DEMO-001"],synthetic:true};
+  assert.equal(assessAuditLink(audit,null,"DEMO-001","points").status,"NO_DATASET");
+  assert.equal(assessAuditLink(audit,{...dataset,sha256:null},"DEMO-001","points").status,"HASH_UNAVAILABLE");
+  assert.equal(assessAuditLink(audit,{...dataset,sha256:"b".repeat(64)},"DEMO-001","points").status,"HASH_MISMATCH");
+  assert.equal(assessAuditLink(audit,{...dataset,players:["OTHER"]},"DEMO-001","points").status,"PLAYER_MISMATCH");
+  assert.equal(assessAuditLink(audit,dataset,"DEMO-001","rebounds").status,"SELECTION_MISMATCH");
+  assert.equal(assessAuditLink(audit,dataset,"DEMO-001","points").status,"BYTES_MATCHED");
+});
+test("integrity application wires dataset replacement to audit re-evaluation with no web requests",()=>{
+  const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
+  assert.match(html,/src="\\.\\/integrity\\.js"/);
+  for(const id of ["csv-sha256","audit-link"])
+    assert.match(html,new RegExp('id="'+id+'"'));
+  assert.match(script,/SportProbIntegrity\\.sha256ArrayBuffer\\(bytes\\)/);
+  assert.match(script,/sportprob:dataset-change/);
+  assert.match(auditScript,/document\\.addEventListener\\("sportprob:dataset-change"/);
+  for(const source of [script,auditScript,integrityScript]){
+    assert.doesNotMatch(source,/\\bfetch\\s*\\(/);
+    assert.doesNotMatch(source,/\\binnerHTML\\b/);
+  }
+});
