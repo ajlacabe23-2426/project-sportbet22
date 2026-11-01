@@ -104,7 +104,7 @@ function parseGames(raw){
         throw Error("Ambiguous same-day game without stable ID at row "+(i+2));
       seenGameIds.add(gameIdentity);
     }else{
-      if(seenDates.has(unique))throw Error("Duplicate/ambiguous player and date without game ID at row "+(i+2));
+      if(seenDates.has(unique))throw Error("Duplicate player and game date without stable game ID at row "+(i+2));
       seenDatesWithoutGameId.add(unique);
     }
     seenDates.add(unique);
