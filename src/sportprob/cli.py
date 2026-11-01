@@ -8,6 +8,7 @@ import json
 
 from .evaluate import backtest
 from .compare import compare_frozen_distributions
+from .bridge import AUDIT_SCHEMA, save_audit_json
 from .ingest import load_game_logs
 from .governance import DatasetManifest, verify_snapshot
 from .holdout import evaluate_frozen_holdout
@@ -43,6 +44,8 @@ def main() -> None:
     compare_parser.add_argument("--manifest", required=True, help="research rights/checksum manifest")
     compare_parser.add_argument("--start", required=True, help="first withheld YYYY-MM-DD")
     compare_parser.add_argument("--end", default=None, help="optional exclusive YYYY-MM-DD")
+    compare_parser.add_argument("--output", default=None, help="optional offline JSON dashboard import path")
+    compare_parser.add_argument("--overwrite", action="store_true", help="explicitly overwrite existing JSON audit")
     args = parser.parse_args()
     try:
         logs = load_game_logs(args.data)
@@ -81,6 +84,7 @@ def main() -> None:
                 holdout_end_exclusive=date.fromisoformat(args.end) if args.end else None,
             )
             output = {
+                "schema": AUDIT_SCHEMA,
                 "research_only": True,
                 "synthetic": manifest.synthetic,
                 "source_name": manifest.source_name,
@@ -95,6 +99,9 @@ def main() -> None:
                 ),
                 **asdict(comparison),
             }
+            if args.output:
+                saved = save_audit_json(output, args.output, overwrite=args.overwrite)
+                output = {**output, "local_json_report": str(saved)}
         elif args.command == "report":
             manifest = DatasetManifest.from_file(args.manifest)
             verified_hash = verify_snapshot(args.data, manifest)

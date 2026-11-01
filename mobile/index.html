@@ -9,6 +9,7 @@
 <title>SportProb — Player Performance Desk</title>
 <link rel="stylesheet" href="./styles.css">
 <script src="./app.js" defer></script>
+<script src="./audit.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -17,6 +18,7 @@
     <div class="nav-label">WORKSPACE</div>
     <a class="nav-link active" href="#overview"><span aria-hidden="true">◉</span> Player overview</a>
     <a class="nav-link" href="#history"><span aria-hidden="true">▤</span> Game history</a>
+    <a class="nav-link" href="#model-audit"><span aria-hidden="true">▥</span> Model audit</a>
     <a class="nav-link" href="#integrity"><span aria-hidden="true">◇</span> Data integrity</a>
     <div class="sidebar-bottom"><span class="status-dot" aria-hidden="true"></span> LOCAL RESEARCH <p>Offline browser analytics. No account, data transfer, or live service.</p></div>
   </aside>
@@ -67,6 +69,15 @@
       <section id="history" class="panel log-panel" aria-labelledby="history-title">
         <div class="panel-heading"><div><div class="panel-kicker">03 / GAME HISTORY</div><h2 id="history-title">Observation log<span class="accent">.</span></h2></div><span id="rows-label" class="rows-label">0 GAMES</span></div>
         <div class="table-scroll"><table><thead><tr><th>Date</th><th>Opponent</th><th>Location</th><th>Minutes</th><th id="metric-column">PTS</th></tr></thead><tbody id="game-rows"><tr><td colspan="5" class="table-empty">Import a dataset to populate the game history.</td></tr></tbody></table></div>
+      </section>
+      <section id="model-audit" class="panel audit-panel" aria-labelledby="audit-title">
+        <div class="panel-heading"><div><div class="panel-kicker">04 / FROZEN HISTORICAL EVALUATION</div><h2 id="audit-title">Model validation<span class="accent">.</span></h2></div><span class="quality-badge">UNVERIFIED RESEARCH</span></div>
+        <p class="audit-explainer">Compare a provisional negative-binomial distribution with a same-mean Poisson benchmark on held-out completed games. These scores evaluate historical predictions, not odds, wagering decisions, or proven real-world accuracy.</p>
+        <div class="audit-upload"><label for="audit-json" class="upload-button"><span aria-hidden="true">＋</span> Import model audit JSON</label><input id="audit-json" type="file" accept=".json,application/json" aria-describedby="audit-help"><p id="audit-help">Generate this file locally with <code>python3.12 -m sportprob.cli compare --output outputs/audit.json</code> using the required dataset, manifest, player, stat and holdout arguments. No file is uploaded to a server.</p></div>
+        <p id="audit-status" role="status" class="audit-status">No model audit imported. Displaying an accuracy score requires a checksum-verified, permitted dataset and a historical holdout.</p>
+        <div id="audit-meta" class="audit-meta" hidden></div>
+        <div class="table-scroll"><table><thead><tr><th>Research model</th><th>Games</th><th>Mean absolute error</th><th>Ranked probability score</th><th>80% interval coverage</th><th>95% uncertainty bounds</th></tr></thead><tbody id="audit-rows"><tr><td colspan="6" class="table-empty">Import an offline model-audit JSON to view historical evaluation results.</td></tr></tbody></table></div>
+        <p class="context-note">Lower error and probability-score values indicate better retrospective fit on the given holdout, not future reliability. Small samples produce very wide uncertainty ranges. Matching player and statistic selections do not authenticate a dataset; see the audit's SHA-256 source details.</p>
       </section>
       <section id="integrity" class="integrity-panel" aria-labelledby="integrity-title">
         <div><div class="section-index">DATA INTELLIGENCE</div><h2 id="integrity-title">Trust the method,<br><em>question the sample.</em></h2></div>

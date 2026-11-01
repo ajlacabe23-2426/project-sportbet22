@@ -81,3 +81,61 @@ test("import form requires a source declaration and acknowledgement",()=>{
   assert.match(script,/Confirm permission to use this dataset/);
   assert.match(script,/Enter the data source or creator/);
 });
+
+const auditScript=fs.readFileSync(path.join(root,"mobile/audit.js"),"utf8");
+function auditParser(){
+  const module={exports:{}};
+  const document={getElementById:()=>({addEventListener:()=>{}})};
+  vm.runInNewContext(auditScript,{module,document},{filename:"mobile/audit.js"});
+  return module.exports.parseAuditJSON;
+}
+function validAudit(){
+  const score=name=>({
+    model:name,evaluated_games:5,mean_negative_log_likelihood:2.1,
+    mean_ranked_probability_score:1.8,mean_absolute_error:3.2,
+    mean_bias_observed_minus_expected:-0.1,coverage_80:0.8,coverage_90:1,
+    mean_interval_width_80:11,
+    coverage_80_wilson_95:[0.4,0.95]
+  });
+  return {
+    schema:"sportprob-frozen-model-audit-v1",
+    research_only:true,rights_are_not_independently_verified:true,
+    synthetic:true,calibration_status:"UNVERIFIED_RESEARCH_BASELINES",
+    dataset_id:"sample-demo",dataset_sha256:"a".repeat(64),
+    source_name:"Synthetic unit test",player_id:"DEMO-001",stat:"points",
+    holdout_start:"2025-11-16",training_games:15,evaluated_games:5,
+    training_policy:"frozen_pre_holdout_only",
+    scores:[score("negative_binomial_provisional"),
+            score("poisson_same_mean_benchmark")]
+  };
+}
+test("offline model-audit interface parses strict, explicitly uncalibrated diagnostics",()=>{
+  assert.doesNotThrow(()=>new vm.Script(auditScript));
+  assert.doesNotMatch(auditScript,/\bfetch\s*\(/);
+  assert.doesNotMatch(auditScript,/\binnerHTML\b/);
+  const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
+  assert.match(html,/src="\.\/audit\.js"/);
+  for(const id of ["model-audit","audit-json","audit-status","audit-meta","audit-rows"])
+    assert.match(html,new RegExp('id="'+id+'"'));
+  const parsed=auditParser()(JSON.stringify(validAudit()));
+  assert.equal(parsed.player_id,"DEMO-001");
+  assert.equal(parsed.scores.length,2);
+});
+test("offline model-audit viewer rejects forged and malformed source data",()=>{
+  const parse=auditParser();
+  const mutate=(field,value)=>{
+    const input=validAudit();input[field]=value;
+    assert.throws(()=>parse(JSON.stringify(input)));
+  };
+  mutate("synthetic","false");
+  mutate("research_only",false);
+  mutate("dataset_sha256","not-a-hash");
+  mutate("calibration_status","PRODUCTION_READY");
+  mutate("scores",[]);
+  const negative=validAudit();
+  negative.scores[0].mean_absolute_error=-1;
+  assert.throws(()=>parse(JSON.stringify(negative)),/Invalid model diagnostic/);
+  const duplicates=validAudit();
+  duplicates.scores[1].model=duplicates.scores[0].model;
+  assert.throws(()=>parse(JSON.stringify(duplicates)),/Unexpected model/);
+});

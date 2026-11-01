@@ -115,3 +115,15 @@ td.table-empty{text-align:center;padding:32px;color:#89a0af}
 @media(max-width:850px){.shell{display:block}.sidebar{height:auto;position:relative;flex-direction:row;align-items:center;padding:12px 18px;gap:9px;border-right:0;border-bottom:1px solid #243744}.identity{margin:0 auto 0 0;padding:0}.identity-name{font-size:12px}.mark{font-size:31px}.nav-label,.sidebar-bottom{display:none}.nav-link{margin:0;padding:8px;font-size:11px}.nav-link span{display:none}.topbar{min-height:50px}.hero{grid-template-columns:minmax(0,1fr) 155px}.court-circle.outer{right:-100px}.court-circle.inner{right:-49px}.analysis-grid{grid-template-columns:1fr}.insight-stack{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.sidebar{padding:11px 14px;overflow-x:auto}.nav-link{font-size:0;min-width:36px;justify-content:center;padding:9px}.nav-link span{display:block;font-size:17px}.identity-name{font-size:11px}.topbar{font-size:9px}.topbar-version{display:none}.hero{grid-template-columns:1fr;min-height:235px}.hero-graphic{position:absolute;inset:0;opacity:.2;pointer-events:none}.hero-copy{padding:27px 23px}.hero h1{font-size:39px}.hero-tags{gap:5px}.hero-tags span{font-size:8px;padding:4px 6px}.import-panel{grid-template-columns:1fr;padding:17px}.source-head{gap:12px}.source-action{text-align:left}.source-status span{display:block;margin:2px 0 0}.filters{grid-template-columns:1fr 1fr;gap:10px;padding:12px}.range-field{grid-column:1/-1}.metrics{grid-template-columns:1fr 1fr;gap:9px}.metric{padding:13px}.metric strong{font-size:25px}.metric-title{font-size:8px}.panel{padding:15px}.chart-legend{margin-top:12px}.chart-panel .panel-heading{display:block}.chart-box{min-height:180px}.chart-empty{font-size:11px}.insight-stack{grid-template-columns:1fr}.integrity-panel{grid-template-columns:1fr;padding:19px}.footer{display:block;font-size:8px}.footer span{display:block;margin:5px 0}.section-heading h2{font-size:27px}.quality-badge{font-size:8px;padding:6px}.source-heading h2{font-size:17px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Locally imported, retrospective probability-model validation */
+.audit-panel{margin-top:17px}
+.audit-panel h2{font-size:clamp(26px,2.6vw,36px);line-height:1.1;letter-spacing:-.05em;margin:6px 0 0}
+.audit-explainer{color:#a7bcc3;font-size:12px;max-width:780px;line-height:1.7}
+.audit-upload{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin:18px 0;padding:14px;border-radius:6px;border:1px solid #344d55;background:#12262c}
+#audit-json{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.audit-upload p{flex:1;min-width:180px;font-size:11px;color:#a8bcc5;margin:0;line-height:1.6}
+.audit-upload code{font-size:10px;overflow-wrap:anywhere;color:#e2f6ad}
+.audit-status{color:#d9fc77;font-size:12px;line-height:1.6;margin:8px 0 12px}
+.audit-meta{margin:10px 0 12px;padding:11px;border-left:3px solid #d9fc77;background:#1b302e;overflow-wrap:anywhere;color:#c3d3d0;font-size:10px;line-height:1.7}
+.audit-meta[hidden]{display:none}
