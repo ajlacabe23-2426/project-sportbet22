@@ -59,13 +59,16 @@ function parseGames(raw){
   if(["player","date",...FIELDS].some(k=>index[k]<0))
     throw Error("Required columns: player/date or player_id/game_date, points, rebounds, assists");
   if(lines.length>20000)throw Error("CSV exceeds 20,000 game rows");
-  const seen=new Set();
+  const seen=new Set(),seenGameIds=new Set();
+  const todayUTC=new Date().toISOString().slice(0,10);
   const parsed=lines.map((columns,i)=>{
     if(columns.length!==header.length)throw Error("CSV row "+(i+2)+" has a different number of columns");
     const get=key=>index[key]<0?"":columns[index[key]].trim();
     const player=get("player"),date=get("date");
     if(!player||player.length>110||!validDate(date))throw Error("Invalid player or calendar date at row "+(i+2));
+    if(date>todayUTC)throw Error("Future-dated game is not a completed observation at row "+(i+2));
     const record={player,date,opponent:get("opponent").slice(0,90),gameId:get("gameId"),home:null,minutes:null};
+    if(record.gameId.length>120)throw Error("Oversized game identifier at row "+(i+2));
     for(const key of FIELDS){
       const v=get(key);
       if(!/^\d+$/.test(v)||!Number.isSafeInteger(Number(v))||Number(v)>200)
@@ -77,9 +80,11 @@ function parseGames(raw){
       const clock=/^(\d{1,2}):(\d{2})$/.exec(v);
       const minutes=clock?Number(clock[1])+Number(clock[2])/60:Number(v);
       if((clock&&Number(clock[2])>=60)||(!clock&&!/^\d+(?:\.\d+)?$/.test(v))||
-         !Number.isFinite(minutes)||minutes>75)
+         !Number.isFinite(minutes)||minutes>80)
         throw Error("Invalid minutes at row "+(i+2));
       record.minutes=minutes;
+      if(minutes===0&&FIELDS.some(key=>record[key]>0))
+        throw Error("Nonzero game statistics require positive playing minutes at row "+(i+2));
     }
     if(index.home>=0&&get("home")!==""){
       const rawHome=get("home").toLowerCase();
@@ -90,6 +95,11 @@ function parseGames(raw){
     const unique=player+"|"+date;
     if(seen.has(unique))throw Error("Duplicate player and game date at row "+(i+2));
     seen.add(unique);
+    if(record.gameId){
+      const gameIdentity=JSON.stringify([player,record.gameId]);
+      if(seenGameIds.has(gameIdentity))throw Error("Duplicate player/game ID at row "+(i+2));
+      seenGameIds.add(gameIdentity);
+    }
     return record;
   });
   parsed.sort((a,b)=>a.date.localeCompare(b.date)||a.player.localeCompare(b.player));
