@@ -14,6 +14,21 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Free SportsDataverse player history (manual, offline)
+
+A new optional `python -m sportprob.sdv_history` helper can inspect a
+**locally downloaded, permitted** SportsDataverse player-box CSV and export
+one player's completed-game observations for the existing Safari history
+dashboard. It supports finding ESPN athlete IDs by player name. It does not
+make network requests or connect to the forecasting CLI.
+
+The source releases are free, but the records originate from ESPN. The
+SportsDataverse repository's CC BY 4.0 declaration does **not independently**
+clear underlying data rights. Review the original provider's terms; do not
+redistribute their full datasets or use them in restricted applications.
+
+[Mac instructions, source and provenance requirements](docs/SPORTSDATAVERSE_HISTORY.md).
+
 ## Completed-game context research
 
 The `history` command provides an offline, **retrospective** player profile.
