@@ -8,6 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; connect-src 'none'">
 <title>SportProb — Player Performance Desk</title>
 <link rel="stylesheet" href="./styles.css">
+<script src="./integrity.js" defer></script>
 <script src="./app.js" defer></script>
 <script src="./audit.js" defer></script>
 </head>
@@ -40,6 +41,7 @@
         <div class="source-head"><div class="section-index">01 / SOURCE</div><div class="source-heading"><h2 id="source-title">Dataset control</h2><p>Bring a permitted player game-log CSV. It stays on this device.</p></div></div>
         <div class="source-action"><div class="import-details"><label for="source-label">Dataset source / creator</label><input id="source-label" type="text" placeholder="e.g. My authorized game logs" maxlength="100" autocomplete="off"><label class="source-confirm"><input id="data-rights" type="checkbox"> I have permission to use this dataset for research.</label></div><label class="upload-button" for="csv-file"><span aria-hidden="true">＋</span> Import game logs</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"><p id="csv-help">Accepts player/date or player_id/game_date and points, rebounds, assists; also PTS, REB, AST header aliases. The repository includes a synthetic demo CSV. No external requests are sent.</p></div>
         <div class="source-status" role="status" id="load-status">NO DATASET LOADED <span>Choose a local CSV to begin.</span></div>
+        <p id="csv-sha256" class="source-fingerprint" role="status">No verified CSV fingerprint.</p>
       </section>
       <section id="overview" class="overview" aria-labelledby="overview-title">
         <div class="section-heading"><div><div class="section-index">02 / PLAYER ANALYSIS</div><h2 id="overview-title">Performance overview<span class="accent">.</span></h2></div><div id="quality-badge" class="quality-badge">AWAITING SOURCE</div></div>
@@ -75,9 +77,10 @@
         <p class="audit-explainer">Compare a provisional negative-binomial distribution with a same-mean Poisson benchmark on held-out completed games. These scores evaluate historical predictions, not odds, wagering decisions, or proven real-world accuracy.</p>
         <div class="audit-upload"><label for="audit-json" class="upload-button"><span aria-hidden="true">＋</span> Import model audit JSON</label><input id="audit-json" type="file" accept=".json,application/json" aria-describedby="audit-help"><p id="audit-help">Generate this file locally with <code>python3.12 -m sportprob.cli compare --output outputs/audit.json</code> using the required dataset, manifest, player, stat and holdout arguments. No file is uploaded to a server.</p></div>
         <p id="audit-status" role="status" class="audit-status">No model audit imported. Displaying an accuracy score requires a checksum-verified, permitted dataset and a historical holdout.</p>
+        <p id="audit-link" class="audit-integrity" data-state="NO_AUDIT" role="status">No audit available to compare against the local CSV.</p>
         <div id="audit-meta" class="audit-meta" hidden></div>
         <div class="table-scroll"><table><thead><tr><th>Research model</th><th>Games</th><th>Mean absolute error</th><th>Ranked probability score</th><th>80% interval coverage</th><th>95% uncertainty bounds</th></tr></thead><tbody id="audit-rows"><tr><td colspan="6" class="table-empty">Import an offline model-audit JSON to view historical evaluation results.</td></tr></tbody></table></div>
-        <p class="context-note">Lower error and probability-score values indicate better retrospective fit on the given holdout, not future reliability. Small samples produce very wide uncertainty ranges. Matching player and statistic selections do not authenticate a dataset; see the audit's SHA-256 source details.</p>
+        <p class="context-note">Lower error and probability-score values indicate better retrospective fit on the given holdout, not future reliability. Small samples produce very wide uncertainty ranges. An exact SHA-256 match establishes only that the two files refer to identical CSV bytes; it does not authenticate the provider, establish rights, or demonstrate reliability.</p>
       </section>
       <section id="integrity" class="integrity-panel" aria-labelledby="integrity-title">
         <div><div class="section-index">DATA INTELLIGENCE</div><h2 id="integrity-title">Trust the method,<br><em>question the sample.</em></h2></div>
