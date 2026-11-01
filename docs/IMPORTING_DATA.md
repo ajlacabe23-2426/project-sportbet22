@@ -17,7 +17,7 @@ Open `mobile/index.html` in Safari. Use the **Data source / creator** field to e
 4. Open the dashboard, enter a specific source or creator, confirm your permissions, select the CSV, then choose the player, statistic, and historical window.
 5. Verify the displayed source, dates, sample count, home/away counts, game log, and missing-field notices. Check the selected player record against your original source.
 
-The dashboard rejects invalid calendar days, duplicate player/date rows, malformed numeric counts, missing required columns, unsafe row counts, and CSVs over 2 MB. It supports up to 20,000 game rows; for bigger authorized archives, create a smaller subset before import. CSV data remains in memory until page reload or another import.
+The dashboard rejects invalid or future-dated calendar days, duplicate player/date rows, repeated player/game identifiers, nonzero production with explicitly zero playing minutes, malformed numeric counts, missing required columns, unsafe row counts, and CSVs over 2 MB. The duration range (0–80 minutes) now agrees with the canonical Python preparation and offline SportsDataverse converter. It supports up to 20,000 game rows; for bigger authorized archives, create a smaller subset before import. CSV data remains in memory until page reload or another import.
 
 ## What a completed import verifies—and what it does not
 
