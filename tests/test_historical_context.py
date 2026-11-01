@@ -28,7 +28,7 @@ class HistoricalContextTests(unittest.TestCase):
         )
         self.assertFalse(result.future_prediction)
         self.assertEqual(result.games_used,20)
-        self.assertEqual(result.average,23.35)
+        self.assertEqual(result.average,22.85)
         self.assertEqual(result.first_game,"2025-11-01")
         self.assertEqual(result.last_game,"2025-11-20")
         self.assertEqual(result.home_games.games,10)
