@@ -15,7 +15,7 @@ from hashlib import sha256
 import json
 from math import isfinite
 from pathlib import Path
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 MAX_INPUT_BYTES = 80_000_000
 MAX_OUTPUT_GAMES = 1500
@@ -186,13 +186,16 @@ def prepare_historical_browser_csv(
         del item["_team_id"]
     selected.sort(key=lambda item: (item["game_date"], item["game_id"]))
     output.parent.mkdir(parents=True, exist_ok=True)
+    created = False
     try:
         with output.open("x", encoding="utf-8", newline="") as handle:
+            created = True
             writer = csv.DictWriter(handle, DISPLAY_HEADER)
             writer.writeheader()
             writer.writerows(selected)
     except Exception:
-        output.unlink(missing_ok=True)
+        if created:
+            output.unlink(missing_ok=True)
         raise
     return {
         "schema": "sportprob-historical-browser-import-v1",
@@ -212,21 +215,59 @@ def prepare_historical_browser_csv(
     }
 
 
+def find_players_in_source(source: str | Path, name_query: str) -> list[dict]:
+    """Read a local CSV and return matching source athlete IDs for inspection."""
+    if not 2 <= len(name_query.strip()) <= 90:
+        raise ValueError("name search must contain 2 to 90 characters")
+    source = Path(source)
+    if source.stat().st_size > MAX_INPUT_BYTES:
+        raise ValueError("source CSV exceeds 80 MB safety limit")
+    players: dict[str, dict] = {}
+    with source.open("r", newline="", encoding="utf-8-sig") as file:
+        reader = csv.DictReader(file)
+        headers = {x.strip().lower() for x in reader.fieldnames or []}
+        athlete = _column(headers, "athlete_id", "player_id")
+        name = _column(headers, "athlete_display_name", "athlete_name", "player_name")
+        for row in reader:
+            if None in row:
+                raise ValueError("malformed source CSV")
+            row = {str(k).strip().lower(): v for k, v in row.items()}
+            found_name = row.get(name, "").strip()
+            found_id = row.get(athlete, "").strip()
+            if name_query.casefold() in found_name.casefold() and found_id:
+                record = players.setdefault(found_id, {
+                    "espn_athlete_id": found_id, "name": found_name, "rows": 0,
+                })
+                record["rows"] += 1
+    return sorted(players.values(), key=lambda r: (-r["rows"], r["name"]))[:40]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert a local SportsDataverse player box CSV for historical Safari exploration"
     )
     parser.add_argument("--source", required=True, help="already downloaded player_box_YEAR.csv")
-    parser.add_argument("--player-id", required=True, help="ESPN athlete_id, not nba_api player ID")
-    parser.add_argument("--output", required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--player-id", help="ESPN athlete_id, not nba_api player ID")
+    group.add_argument("--find-player", help="Find a player's ESPN ID by name in the local CSV")
+    parser.add_argument("--output", help="new local .csv historical browser file")
     parser.add_argument("--confirm-private-research", action="store_true")
     args = parser.parse_args()
     try:
-        result = prepare_historical_browser_csv(
-            args.source, args.output,
-            player_id=args.player_id,
-            acknowledge_private_research=args.confirm_private_research,
-        )
+        if args.find_player:
+            result = {
+                "research_only": True,
+                "source": "Local SportsDataverse ESPN player box snapshot",
+                "matches": find_players_in_source(args.source, args.find_player),
+            }
+        else:
+            if not args.output:
+                raise ValueError("--output is required when exporting a player history")
+            result = prepare_historical_browser_csv(
+                args.source, args.output,
+                player_id=args.player_id,
+                acknowledge_private_research=args.confirm_private_research,
+            )
     except (ValueError, OSError) as exc:
         parser.error(str(exc))
     print(json.dumps(result, indent=2))
