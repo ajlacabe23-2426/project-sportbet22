@@ -66,10 +66,12 @@
       " · Dataset: "+doc.dataset_id+" · Input SHA-256: "+doc.dataset_sha256;
     const selectedPlayer=$("player")?.value||"";
     const selectedStat=$("stat")?.value||"points";
-    const aligned=selectedPlayer===doc.player_id&&selectedStat===doc.stat;
-    const matchMessage=aligned
-      ?"Dashboard player and statistic match the imported audit labels. CSV byte identity is not verified by this browser."
-      :"Dashboard selections differ from the imported audit, or no game logs are loaded. Results are shown separately.";
+    const link=globalThis.SportProbIntegrity.assessAuditLink(
+      doc,globalThis.SportProbDataset||null,selectedPlayer,selectedStat
+    );
+    $("audit-link").dataset.state=link.status;
+    $("audit-link").textContent="LOCAL SOURCE LINK · "+link.status.replaceAll("_"," ")+" — "+link.description;
+    const matchMessage=link.description;
     $("audit-status").textContent=(doc.synthetic
       ?"SYNTHETIC DEMONSTRATION — not NBA forecasting evidence. "
       :"USER-DECLARED HISTORICAL DATA — source rights and authenticity have not been independently verified. ")+matchMessage;
@@ -84,6 +86,8 @@
       renderAudit(data);
     }catch(error){
       current=null;$("audit-meta").hidden=true;$("audit-meta").textContent="";
+      $("audit-link").dataset.state="NO_AUDIT";
+      $("audit-link").textContent="No audit available to compare against the local CSV.";
       const body=$("audit-rows");body.replaceChildren();
       const tr=document.createElement("tr"),td=document.createElement("td");
       td.colSpan=6;td.className="table-empty";
@@ -94,7 +98,8 @@
   $("audit-json").addEventListener("change",handleAudit);
   $("player").addEventListener("change",()=>{if(current)renderAudit(current)});
   $("stat").addEventListener("change",()=>{if(current)renderAudit(current)});
-  // A CSV import occurs asynchronously; check current selectors when the user
-  // next changes player/statistic. The audit remains a distinct local artifact.
+  document.addEventListener("sportprob:dataset-change",()=>{if(current)renderAudit(current)});
+  // Re-evaluate byte identity on every import, rejection or player/stat change.
+  // A successful match proves equality of local input bytes only.
   if(typeof module!=="undefined"&&module.exports)module.exports={parseAuditJSON};
 })();
