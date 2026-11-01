@@ -97,6 +97,12 @@ jobs:
           --rights-evidence "SportProb original synthetic test data generated for validation"
           --confirm-authorized --synthetic
 
+      - name: Verify synthetic retrospective two-season conversion and date-safe partition CLI
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m unittest discover -s tests -p test_history_bridge.py -v
+
   mobile-ui:
     runs-on: ubuntu-latest
     steps:
