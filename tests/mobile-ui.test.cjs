@@ -54,6 +54,16 @@ test("invalid calendar days, duplicates and fractional counts are rejected",()=>
   assert.throws(()=>parse(header+"A,2026-02-19,10.5,5,4\n"),/Invalid points/);
   assert.throws(()=>parse(header+"A,2026-02-19,10,-1,4\n"),/Invalid rebounds/);
 });
+test("browser and Python ingestion agree on future dates, game IDs and minutes",()=>{
+  const parse=loadParser();
+  const header="player_id,game_date,game_id,minutes,points,rebounds,assists\n";
+  assert.throws(()=>parse(header+"A,2999-01-01,G01,25,10,4,3\n"),/Future-dated game/);
+  assert.throws(()=>parse(header+"A,2026-01-05,G01,0,10,4,3\n"),/positive playing minutes/);
+  assert.throws(()=>parse(header+"A,2026-01-05,G01,80.01,10,4,3\n"),/Invalid minutes/);
+  const valid=parse(header+"A,2026-01-05,G01,80,10,4,3\n");
+  assert.equal(valid[0].minutes,80,"browser uses canonical Python 80-minute research cap");
+  assert.throws(()=>parse(header+"A,2026-01-05,G01,23,10,4,3\nA,2026-01-07,G01,25,12,5,2\n"),/Duplicate player\/game ID/);
+});
 test("quoted CSV context fields remain literal data, never markup",()=>{
   const input='player,date,points,rebounds,assists,opponent\n"A","2026-01-09",20,5,4,"Team ""Example"""';
   const data=loadParser()(input);
@@ -85,7 +95,7 @@ test("import form requires a source declaration and acknowledgement",()=>{
 const auditScript=fs.readFileSync(path.join(root,"mobile/audit.js"),"utf8");
 function auditParser(){
   const module={exports:{}};
-  const document={getElementById:()=>({addEventListener:()=>{}})};
+  const document={getElementById:()=>({addEventListener:()=>{}}),addEventListener:()=>{}};
   vm.runInNewContext(auditScript,{module,document},{filename:"mobile/audit.js"});
   return module.exports.parseAuditJSON;
 }
@@ -138,4 +148,45 @@ test("offline model-audit viewer rejects forged and malformed source data",()=>{
   const duplicates=validAudit();
   duplicates.scores[1].model=duplicates.scores[0].model;
   assert.throws(()=>parse(JSON.stringify(duplicates)),/Unexpected model/);
+});
+
+const {webcrypto}=require("node:crypto");
+const integrityScript=fs.readFileSync(path.join(root,"mobile/integrity.js"),"utf8");
+function loadIntegrity(){
+  const module={exports:{}};
+  vm.runInNewContext(integrityScript,{module,crypto:webcrypto},{filename:"mobile/integrity.js"});
+  return module.exports;
+}
+test("offline CSV fingerprint matches Python's checked synthetic input byte-for-byte",async()=>{
+  const helper=loadIntegrity();
+  const bytes=fs.readFileSync(path.join(root,"data/demo_games.csv"));
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,"data/demo_games.manifest.json"),"utf8"));
+  const buffer=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
+  assert.equal(await helper.sha256ArrayBuffer(buffer,webcrypto),manifest.sha256);
+  const tampered=Buffer.concat([bytes,Buffer.from([10])]);
+  const modified=tampered.buffer.slice(tampered.byteOffset,tampered.byteOffset+tampered.byteLength);
+  assert.notEqual(await helper.sha256ArrayBuffer(modified,webcrypto),manifest.sha256);
+  assert.equal(await helper.sha256ArrayBuffer(buffer,null),null,"nonsecure/unsupported browser must report unavailable, not match");
+});
+test("audit/CSV linking is fail-closed on absent or different source, player and statistic",()=>{
+  const {assessAuditLink}=loadIntegrity();
+  const audit=validAudit(),dataset={sha256:audit.dataset_sha256,players:["DEMO-001"],synthetic:true};
+  assert.equal(assessAuditLink(audit,null,"DEMO-001","points").status,"NO_DATASET");
+  assert.equal(assessAuditLink(audit,{...dataset,sha256:null},"DEMO-001","points").status,"HASH_UNAVAILABLE");
+  assert.equal(assessAuditLink(audit,{...dataset,sha256:"b".repeat(64)},"DEMO-001","points").status,"HASH_MISMATCH");
+  assert.equal(assessAuditLink(audit,{...dataset,players:["OTHER"]},"DEMO-001","points").status,"PLAYER_MISMATCH");
+  assert.equal(assessAuditLink(audit,dataset,"DEMO-001","rebounds").status,"SELECTION_MISMATCH");
+  assert.equal(assessAuditLink(audit,dataset,"DEMO-001","points").status,"BYTES_MATCHED");
+});
+test("integrity application wires dataset replacement to audit re-evaluation without networking",()=>{
+  const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
+  assert.ok(html.includes('src="./integrity.js"'));
+  for(const id of ["csv-sha256","audit-link"])assert.ok(html.includes('id="'+id+'"'));
+  assert.ok(script.includes("SportProbIntegrity.sha256ArrayBuffer(bytes)"));
+  assert.ok(script.includes("sportprob:dataset-change"));
+  assert.ok(auditScript.includes('document.addEventListener("sportprob:dataset-change"'));
+  for(const source of [script,auditScript,integrityScript]){
+    assert.equal(source.includes("fetch("),false);
+    assert.equal(source.includes("innerHTML"),false);
+  }
 });

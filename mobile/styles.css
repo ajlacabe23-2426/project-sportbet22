@@ -127,3 +127,10 @@ td.table-empty{text-align:center;padding:32px;color:#89a0af}
 .audit-status{color:#d9fc77;font-size:12px;line-height:1.6;margin:8px 0 12px}
 .audit-meta{margin:10px 0 12px;padding:11px;border-left:3px solid #d9fc77;background:#1b302e;overflow-wrap:anywhere;color:#c3d3d0;font-size:10px;line-height:1.7}
 .audit-meta[hidden]{display:none}
+
+/* Offline model-data identity feedback; colors never imply licensing approval. */
+.source-fingerprint{font-size:11px;color:#a6c9cc;line-height:1.7;overflow-wrap:anywhere;margin:12px 0 0}
+.audit-integrity{border:1px solid #4b6873;border-radius:10px;background:#122832;color:#d0e6e9;padding:15px 17px;font-size:12px;line-height:1.7;overflow-wrap:anywhere;margin:16px 0}
+.audit-integrity[data-state="BYTES_MATCHED"]{border-color:#538b7b;background:#18312e;color:#d4f1e0}
+.audit-integrity[data-state="HASH_MISMATCH"],.audit-integrity[data-state="PLAYER_MISMATCH"]{border-color:#b28463;background:#352820;color:#ffe0c5}
+.audit-integrity[data-state="HASH_UNAVAILABLE"],.audit-integrity[data-state="SELECTION_MISMATCH"]{border-color:#838154;background:#343222;color:#f4eabd}

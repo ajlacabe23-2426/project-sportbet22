@@ -85,9 +85,11 @@ open -a Safari mobile/index.html
 In Safari, select `data/demo_games.csv` after declaring its source and
 permission, then import `outputs/demo-model-audit.json` in **Model
 validation**. The Python CLI checks the source CSV against its supplied
-manifest; the browser shows the report and its SHA-256 but does not recompute
-a checksum for another CSV loaded separately. Do not treat the demonstration
-as NBA calibration or use unlicensed provider data.
+manifest; the browser now computes a local SHA-256 of the selected CSV bytes
+where Web Crypto is available and flags matching or mismatching audit inputs.
+A checksum match is **not** independent authentication of the provider,
+research permission, record completeness or model calibration. The bundled
+example remains synthetic.
 
 Read [complete offline connection instructions](docs/CONNECTING_ENGINE.md).
 There is **no automatic NBA.com or sportsbook data feed** connected to this

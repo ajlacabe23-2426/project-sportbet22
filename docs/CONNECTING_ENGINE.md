@@ -67,10 +67,19 @@ your permission to use the included fixture. Choose
 two model-score rows.
 
 The dashboard reads both files locally using browser file inputs; no uploads,
-remote requests, or keys. It compares the labels of the selected player and
-statistic, but it does **not** recompute the CSV's SHA-256 in Safari. The
-Python CLI verifies the snapshot that produced the exported audit. Avoid
-mixing a CSV and an audit from different source files.
+remote requests, or keys. On supported secure browser contexts it computes a
+SHA-256 digest from the **original CSV bytes**, then compares it against
+the imported Python audit's `dataset_sha256`. An exact match plus the same
+selected player and statistic appears as `BYTES MATCHED`. If the loaded CSV is
+different, the dashboard displays `HASH MISMATCH`; changing the input,
+player or metric automatically rechecks the audit link. An unsupported browser
+shows `HASH UNAVAILABLE` and never pretends to have verified the input.
+
+The fingerprint establishes only that the displayed CSV bytes match the audit's
+input bytes. **It does not prove source authenticity, permission to use the
+records, completeness of the games, the model's calibration, or a live data
+connection.** If your Safari installation lacks Web Crypto on `file://`, use
+a secure localhost server and retry; do not treat an unavailable hash as a match.
 
 ## 5. Real data and future integration
 
