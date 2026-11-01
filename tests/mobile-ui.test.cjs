@@ -56,13 +56,13 @@ test("invalid calendar days, duplicates and fractional counts are rejected",()=>
 });
 test("browser and Python ingestion agree on future dates, game IDs and minutes",()=>{
   const parse=loadParser();
-  const header="player_id,game_date,game_id,minutes,points,rebounds,assists\\n";
-  assert.throws(()=>parse(header+"A,2999-01-01,G01,25,10,4,3\\n"),/Future-dated game/);
-  assert.throws(()=>parse(header+"A,2026-01-05,G01,0,10,4,3\\n"),/positive playing minutes/);
-  assert.throws(()=>parse(header+"A,2026-01-05,G01,80.01,10,4,3\\n"),/Invalid minutes/);
-  const valid=parse(header+"A,2026-01-05,G01,80,10,4,3\\n");
+  const header="player_id,game_date,game_id,minutes,points,rebounds,assists\n";
+  assert.throws(()=>parse(header+"A,2999-01-01,G01,25,10,4,3\n"),/Future-dated game/);
+  assert.throws(()=>parse(header+"A,2026-01-05,G01,0,10,4,3\n"),/positive playing minutes/);
+  assert.throws(()=>parse(header+"A,2026-01-05,G01,80.01,10,4,3\n"),/Invalid minutes/);
+  const valid=parse(header+"A,2026-01-05,G01,80,10,4,3\n");
   assert.equal(valid[0].minutes,80,"browser uses canonical Python 80-minute research cap");
-  assert.throws(()=>parse(header+"A,2026-01-05,G01,23,10,4,3\\nA,2026-01-07,G01,25,12,5,2\\n"),/Duplicate player\\/game ID/);
+  assert.throws(()=>parse(header+"A,2026-01-05,G01,23,10,4,3\nA,2026-01-07,G01,25,12,5,2\n"),/Duplicate player\/game ID/);
 });
 test("quoted CSV context fields remain literal data, never markup",()=>{
   const input='player,date,points,rebounds,assists,opponent\n"A","2026-01-09",20,5,4,"Team ""Example"""';
