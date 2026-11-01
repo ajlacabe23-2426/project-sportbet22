@@ -212,5 +212,5 @@ test("multi-season importer still rejects repeat game IDs and ambiguous same-day
   const line=(date,id)=>"Example Player,"+date+",19,6,4,28.5,ESPN_TEAM_1,home,"+id+"\n";
   assert.throws(()=>parse(header+line("2025-01-21","G1")+line("2025-01-23","G1")) ,/Duplicate player\/game ID/);
   assert.throws(()=>parse(header+line("2025-01-21","")+line("2025-01-21","G2")) ,/Ambiguous same-day/);
-  assert.throws(()=>parse(header+line("2025-01-21","G2")+line("2025-01-21","")) ,/ambiguous player and date/);
+  assert.throws(()=>parse(header+line("2025-01-21","G2")+line("2025-01-21","")) ,/Duplicate player and game date/);
 });
