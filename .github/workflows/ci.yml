@@ -55,6 +55,15 @@ jobs:
           --manifest data/demo_games.manifest.json
           --player DEMO-001 --stat points --start 2025-11-16
 
+      - name: Compare frozen-holdout statistical distributions
+        env:
+          PYTHONPATH: src
+        run: >-
+          python -m sportprob.cli compare
+          --data data/demo_games.csv
+          --manifest data/demo_games.manifest.json
+          --player DEMO-001 --stat points --start 2025-11-16
+
   mobile-ui:
     runs-on: ubuntu-latest
     steps:
