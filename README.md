@@ -14,6 +14,21 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Historical-data validation and normalization
+
+SportProb can prepare a **local, independently permitted** historical
+player-game CSV into its strict canonical schema without calling any external
+provider. The research pipeline normalizes common column aliases, validates
+minutes and game dates, rejects duplicate player/game IDs, and writes a
+checksum-bound local source declaration. It then audits player coverage and
+chronological training/calibration/holdout sufficiency.
+
+Read the [Mac-first real-data workflow](docs/REAL_DATA_PIPELINE.md). All
+bundled data is still **synthetic**; the research pipeline does not obtain,
+scrape or redistribute NBA.com statistics. A source-rights declaration and
+successful data-quality checks do not establish independent licensing,
+real-world authenticity or model calibration.
+
 ## Connect the probability engine to the dashboard (offline)
 
 The Python CLI can now export frozen historical model comparisons to a
