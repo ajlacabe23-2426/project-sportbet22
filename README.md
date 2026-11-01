@@ -14,6 +14,21 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Two-season historical research preparation and partitions
+
+A local converter can bridge the browser-exported ESPN historical game rows
+to the strict Python research schema without altering or redistributing the
+source CSV. A deterministic date-safe 65/15/20 partition report then checks
+how much observational coverage is available for retrospective evaluation.
+No genuine prospective blind accuracy claim is made, because these game
+outcomes have already been viewed.
+
+The bridge records an explicit, user-supplied source-permission declaration;
+SportProb **cannot independently clear upstream ESPN rights**. Do not
+attest to permissions unless you have confirmed them.
+
+See [Two-season retrospective validation](docs/TWO_SEASON_EVALUATION.md).
+
 ## Free SportsDataverse player history (manual, offline)
 
 A new optional `python -m sportprob.sdv_history` helper can inspect a
