@@ -14,6 +14,28 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Completed-game context research
+
+The `history` command provides an offline, **retrospective** player profile.
+It describes past minutes, per-36-minute production, recent vs earlier completed
+games, home/away samples, opponent samples with at least three observations,
+and the actual 10th–90th percentiles of already played games. **It does not
+calculate a probability for a proposed stat target, generate odds or predict
+future game outcomes.** Source-rights declarations and dataset bytes must
+match the existing manifest checksum.
+
+```bash
+PYTHONPATH=src python3.12 -m sportprob.cli history \
+  --data data/demo_games.csv \
+  --manifest data/demo_games.manifest.json \
+  --player DEMO-001 --stat points \
+  --as-of 2025-11-21 --history-games 20
+```
+
+The bundled example is explicitly **synthetic**. These retrospective samples
+are descriptive and should not be interpreted as real-data forecasting
+accuracy. Details: [historical context research](docs/HISTORICAL_CONTEXT.md).
+
 ## Historical-data validation and normalization
 
 SportProb can prepare a **local, independently permitted** historical
