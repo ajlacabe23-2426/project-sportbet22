@@ -76,12 +76,63 @@ function auditDoc(sha){
     scores:[score("negative_binomial_provisional"),score("poisson_same_mean_benchmark")]
   };
 }
+function historicalDoc(sha){
+  const csv=readFileSync(path.join(root,"data/demo_games.csv"),"utf8").trim().split(/\r?\n/);
+  const headers=csv.shift().split(",");
+  const records=csv.map(line=>{
+    const values=line.split(",");
+    return Object.fromEntries(headers.map((h,i)=>[h,values[i]]));
+  });
+  const metrics=["points","rebounds","assists","minutes"];
+  function summary(items){
+    return Object.fromEntries(metrics.map(metric=>{
+      const vals=items.map(x=>Number(x[metric]));
+      if(vals.length===0)return [metric,null];
+      const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+      const sd=vals.length>1?Math.sqrt(vals.reduce((t,v)=>t+(v-avg)**2,0)/(vals.length-1)):null;
+      const sorted=[...vals].sort((a,b)=>a-b),middle=Math.floor(vals.length/2);
+      const median=vals.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;
+      const x={games:vals.length,mean:+avg.toFixed(2),median:+median.toFixed(2),
+        standard_deviation:sd===null?null:+sd.toFixed(2),
+        observed_min:Math.min(...vals),observed_max:Math.max(...vals)};
+      if(metric!=="minutes")x.observed_per_36_minutes=+(
+        36*vals.reduce((a,b)=>a+b,0)/
+        items.reduce((a,b)=>a+Number(b.minutes),0)
+      ).toFixed(2);
+      return [metric,x];
+    }));
+  }
+  return {
+    schema:"sportprob-offline-historical-observations-v1",
+    research_only:true,future_prediction:false,model_evaluation_performed:false,
+    genuinely_blind_validation:false,source_rights_independently_verified:false,
+    source_authenticity_independently_verified:false,
+    player_id:"ESPN:3975",dataset_file:"demo_games.csv",
+    dataset_sha256:sha,selected_games:records.length,
+    first_game:records[0].game_date,last_game:records.at(-1).game_date,
+    source_verified_season_type_2:false,
+    cutoffs:{training_end_exclusive:"2025-11-14",
+      historical_evaluation_start_inclusive:"2025-11-17"},
+    overall:summary(records),periods:{
+      training:summary(records.slice(0,13)),
+      calibration:summary(records.slice(13,16)),
+      historical_evaluation:summary(records.slice(16))
+    },
+    seasons:{},season_to_season_mean_changes:{},
+    venue:{
+      home:summary(records.filter(x=>x.home==="true")),
+      away:summary(records.filter(x=>x.home==="false")),
+      unknown:0
+    },
+    last_five_completed_games:summary(records.slice(-5)),source_audit:null,
+  };
+}
 test("headless Chrome imports CSV and audit, then detects edited source bytes",
   {skip:process.env.RUN_BROWSER_ACCEPTANCE!=="1",timeout:85000},async()=>{
     const dir=await mkdtemp(path.join(tmpdir(),"sportprob-browser-"));
     const allowed=new Set([
       "/mobile/index.html","/mobile/styles.css","/mobile/app.js",
-      "/mobile/integrity.js","/mobile/audit.js"
+      "/mobile/integrity.js","/mobile/audit.js","/mobile/history-report.js"
     ]);
     const server=createServer(async(req,res)=>{
       const url=new URL(req.url,"http://localhost"),location=url.pathname;
@@ -102,9 +153,11 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       const original=path.join(root,"data/demo_games.csv");
       const altered=path.join(dir,"altered.csv");
       const auditFile=path.join(dir,"audit.json");
+      const reportFile=path.join(dir,"history.json");
       const manifest=JSON.parse(readFileSync(path.join(root,"data/demo_games.manifest.json"),"utf8"));
       await writeFile(altered,Buffer.concat([readFileSync(original),Buffer.from([10])]));
       await writeFile(auditFile,JSON.stringify(auditDoc(manifest.sha256)));
+      await writeFile(reportFile,JSON.stringify(historicalDoc(manifest.sha256)));
       chrome=spawn(process.env.CHROME_BIN||"google-chrome",[
         "--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
         "--no-first-run","--no-default-browser-check",
@@ -139,8 +192,15 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       assert.equal(await js("document.getElementById('audit-link').dataset.state"),"SELECTION_MISMATCH");
       await js("(()=>{const s=document.getElementById('stat');s.value='points';s.dispatchEvent(new Event('change'));return true;})()");
       assert.equal(await js("document.getElementById('audit-link').dataset.state"),"BYTES_MATCHED");
+      // The same synthetic file is used only to verify the UI's file-identity
+      // link. The report player deliberately differs from DEMO-001, so this
+      // first import must fail closed on identity rather than show any metrics.
+      await attach("#history-report-json",reportFile);
+      await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='PLAYER_MISMATCH'"),"historical report/player namespace mismatch");
+      assert.equal(await js("document.getElementById('history-report-results').hidden"),true);
       await attach("#csv-file",altered);
       await eventually(()=>js("document.getElementById('audit-link').dataset.state==='HASH_MISMATCH'"),"mutated CSV fingerprint rejection");
+      await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='HASH_MISMATCH'"),"phase 5 report invalidation on changed source");
       assert.deepEqual(conn.exceptions,[],"browser produces no unhandled script exceptions");
     }finally{
       conn?.close();
