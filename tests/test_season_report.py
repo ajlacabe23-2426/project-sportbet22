@@ -9,7 +9,7 @@ import subprocess
 import sys
 import unittest
 
-from sportprob.season_report import make_report, render_html, save_reports
+from sportprob.season_report import make_report, render_html, save_reports, suggest_chronological_cutoffs
 
 ROOT = Path(__file__).resolve().parents[1]
 BROWSER = ("player_name", "game_date", "pts", "reb", "ast", "min",
@@ -176,6 +176,51 @@ class SeasonReportTests(unittest.TestCase):
                 make_report(data, player_id="3975",
                             train_end=date(2025, 6, 1),
                             evaluation_start=date(2025, 9, 1))
+
+    def test_automatic_historical_date_splits_produce_complete_partition(self):
+        with TemporaryDirectory() as temp:
+            folder = Path(temp)
+            data, a, b = make_fixture(folder)
+            cut1, cut2 = suggest_chronological_cutoffs(data)
+            report = make_report(
+                data, player_id="3975", train_end=cut1,
+                evaluation_start=cut2, raw_sources=[a, b],
+            )
+            portions = [
+                report["periods"][key]["points"]["games"]
+                for key in ("training", "calibration", "historical_evaluation")
+            ]
+            self.assertEqual(portions, [52, 12, 16])
+            self.assertEqual(sum(portions), 80)
+
+    def test_one_command_auto_report_and_existing_file_protection(self):
+        with TemporaryDirectory() as temp:
+            folder = Path(temp)
+            data, a, b = make_fixture(folder)
+            stem = folder / "outputs" / "synthetic-observations-v1"
+            command = [
+                sys.executable, "-m", "sportprob.season_report",
+                "--data", str(data), "--espn-player-id", "3975",
+                "--auto-splits", "--raw", str(a), str(b),
+                "--output-stem", str(stem),
+            ]
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(ROOT / "src")
+            first = subprocess.run(
+                command, env=env, cwd=ROOT, capture_output=True, text=True
+            )
+            self.assertEqual(first.returncode, 0, first.stderr)
+            response = json.loads(first.stdout)
+            self.assertEqual(response["selected_games"], 80)
+            self.assertIn("fixed_65_15_20", response["split_policy"])
+            self.assertEqual(
+                json.loads(stem.with_suffix(".json").read_text())["selected_games"], 80
+            )
+            second = subprocess.run(
+                command, env=env, cwd=ROOT, capture_output=True, text=True
+            )
+            self.assertNotEqual(second.returncode, 0)
+            self.assertIn("already exists", second.stderr)
 
     def test_cli_generates_private_html_and_json_from_local_source(self):
         with TemporaryDirectory() as temp:
