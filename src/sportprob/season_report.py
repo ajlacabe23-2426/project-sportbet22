@@ -216,6 +216,16 @@ def make_report(
             label: _stats([r for r in records if membership[r["game_id"]] == label])
             for label in labels
         }
+    season_changes = {}
+    if len(seasons) >= 2:
+        labels = list(seasons)
+        for earlier, later in zip(labels, labels[1:]):
+            season_changes[f"{earlier} to {later}"] = {
+                metric: round(
+                    seasons[later][metric]["mean"] - seasons[earlier][metric]["mean"], 2
+                )
+                for metric in METRICS
+            }
     venues = {
         "home": _stats([r for r in records if r["home"] == "home"]),
         "away": _stats([r for r in records if r["home"] == "away"]),
@@ -244,6 +254,7 @@ def make_report(
         "overall": _stats(records),
         "periods": {name: _stats(part) for name, part in by_phase.items()},
         "seasons": seasons,
+        "season_to_season_mean_changes": season_changes,
         "venue": venues,
         "source_audit": source_audit,
         "last_five_completed_games": _stats(records[-5:]),
@@ -276,12 +287,13 @@ def _table(name: str, stats: dict) -> str:
             + "".join(f"<td>{_fmt(data[key])}</td>"
                       for key in ("mean", "median", "standard_deviation",
                                   "observed_min", "observed_max"))
+            + f"<td>{_fmt(data.get('observed_per_36_minutes'))}</td>"
             + "</tr>"
         )
     return (
         f"<section><h2>{escape(name)}</h2><div class='scroll'><table>"
         "<thead><tr><th>Metric</th><th>Mean</th><th>Median</th>"
-        "<th>SD</th><th>Min</th><th>Max</th></tr></thead><tbody>"
+        "<th>SD</th><th>Min</th><th>Max</th><th>Per 36 min</th></tr></thead><tbody>"
         + "".join(rows) + "</tbody></table></div></section>"
     )
 
@@ -293,6 +305,20 @@ def render_html(report: dict) -> str:
         sections.append(_table(f"{name.replace('_', ' ').title()} · {games} games", content))
     for name, content in report["seasons"].items():
         sections.append(_table(f"Source season {name} · {content['points']['games']} games", content))
+    if report["season_to_season_mean_changes"]:
+        for title, changes in report["season_to_season_mean_changes"].items():
+            season_rows = "".join(
+                f"<tr><th scope='row'>{escape(metric.title())}</th>"
+                f"<td>{changes[metric]:+.2f}</td></tr>"
+                for metric in METRICS
+            )
+            sections.append(
+                f"<section><h2>Season mean change · {escape(title)}</h2>"
+                "<p>Later minus earlier season; observed descriptive change.</p>"
+                "<div class='scroll'><table><thead><tr><th>Metric</th>"
+                "<th>Change in mean</th></tr></thead><tbody>"
+                + season_rows + "</tbody></table></div></section>"
+            )
     for name in ("home", "away"):
         if report["venue"][name]["points"]:
             sections.append(_table(name.title() + " completed games", report["venue"][name]))
