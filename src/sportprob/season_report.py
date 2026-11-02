@@ -402,26 +402,77 @@ def save_reports(report: dict, output_html: str | Path, output_json: str | Path)
     }
 
 
+def suggest_chronological_cutoffs(data_path: str | Path) -> tuple[date, date]:
+    """Allocate ~65/15/20 by complete calendar days without using stat outcomes."""
+    rows, _ = _rows(Path(data_path), MAX_BYTES)
+    if len(rows) < 50:
+        raise ValueError("at least 50 completed games are needed for automatic partitions")
+    counts = Counter(_valid_date(row["game_date"].strip()) for row in rows)
+    days = sorted(counts)
+    if len(days) < 3:
+        raise ValueError("at least three calendar dates are required")
+    targets = (len(rows) * .65, len(rows) * .80)
+    positions = []
+    cumulative = 0
+    for index, day in enumerate(days[:-1]):
+        cumulative += counts[day]
+        if len(positions) < 2 and cumulative >= targets[len(positions)]:
+            positions.append(days[index + 1])
+    if len(positions) != 2 or positions[0] >= positions[1]:
+        raise ValueError("cannot form three non-overlapping historical date partitions")
+    before = sum(n for day, n in counts.items() if day < positions[0])
+    middle = sum(n for day, n in counts.items() if positions[0] <= day < positions[1])
+    after = len(rows) - before - middle
+    if before < 30 or middle < 10 or after < 10:
+        raise ValueError("automatic partitions lack 30/10/10 completed games")
+    return positions[0], positions[1]
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         description="Local retrospective historical game report; no forecasting"
     )
     p.add_argument("--data", required=True)
     p.add_argument("--espn-player-id", required=True)
-    p.add_argument("--train-end", required=True)
-    p.add_argument("--evaluation-start", required=True)
+    p.add_argument("--train-end", help="exclusive YYYY-MM-DD training cutoff")
+    p.add_argument("--evaluation-start", help="inclusive YYYY-MM-DD historical evaluation cutoff")
+    p.add_argument("--auto-splits", action="store_true", help="fixed 65/15/20 date-safe retrospective partition")
     p.add_argument("--raw", nargs="*", default=[], help="original local season CSV files")
-    p.add_argument("--html-out", required=True)
-    p.add_argument("--json-out", required=True)
+    p.add_argument("--html-out", help="new local .html output")
+    p.add_argument("--json-out", help="new local .json output")
+    p.add_argument("--output-stem", help="write HTML and JSON using a versioned filename stem")
     args = p.parse_args()
     try:
+        if args.auto_splits:
+            if args.train_end or args.evaluation_start:
+                raise ValueError("--auto-splits must not be mixed with explicit cutoffs")
+            train_end, eval_start = suggest_chronological_cutoffs(args.data)
+            policy = "fixed_65_15_20_by_calendar_date_retrospective"
+        else:
+            if not args.train_end or not args.evaluation_start:
+                raise ValueError("provide both explicit cutoffs or --auto-splits")
+            train_end = date.fromisoformat(args.train_end)
+            eval_start = date.fromisoformat(args.evaluation_start)
+            policy = "user_supplied_retrospective_cutoffs"
+        if args.output_stem:
+            if args.html_out or args.json_out:
+                raise ValueError("--output-stem must not be mixed with individual output paths")
+            output_html = args.output_stem + ".html"
+            output_json = args.output_stem + ".json"
+        else:
+            if not args.html_out or not args.json_out:
+                raise ValueError("provide both --html-out and --json-out or --output-stem")
+            output_html, output_json = args.html_out, args.json_out
         report = make_report(
             args.data, player_id=args.espn_player_id,
-            train_end=date.fromisoformat(args.train_end),
-            evaluation_start=date.fromisoformat(args.evaluation_start),
+            train_end=train_end, evaluation_start=eval_start,
             raw_sources=args.raw,
         )
-        result = save_reports(report, args.html_out, args.json_out)
+        report["split_policy"] = policy
+        result = save_reports(report, output_html, output_json)
+        result["split_policy"] = policy
+        result["training_end_exclusive"] = train_end.isoformat()
+        result["evaluation_start"] = eval_start.isoformat()
     except (OSError, ValueError, UnicodeError) as exc:
         p.error(str(exc))
     print(json.dumps(result, indent=2))

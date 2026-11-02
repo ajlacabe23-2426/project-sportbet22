@@ -134,3 +134,18 @@ td.table-empty{text-align:center;padding:32px;color:#89a0af}
 .audit-integrity[data-state="BYTES_MATCHED"]{border-color:#538b7b;background:#18312e;color:#d4f1e0}
 .audit-integrity[data-state="HASH_MISMATCH"],.audit-integrity[data-state="PLAYER_MISMATCH"]{border-color:#b28463;background:#352820;color:#ffe0c5}
 .audit-integrity[data-state="HASH_UNAVAILABLE"],.audit-integrity[data-state="SELECTION_MISMATCH"]{border-color:#838154;background:#343222;color:#f4eabd}
+
+
+/* Phase 5: checksum-linked consolidated research, strictly local. */
+.history-report-panel{margin-top:17px}
+.history-report-panel h2{font-size:clamp(25px,2.6vw,36px);line-height:1.1;letter-spacing:-.05em;margin:6px 0 0}
+.history-report-panel h3{margin:18px 0 8px;font-size:18px;letter-spacing:-.03em}
+#history-report-json{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#history-report-results[hidden]{display:none}
+.report-provenance,.report-quality{font-size:11px;color:#a5c2c5;line-height:1.75;overflow-wrap:anywhere}
+.report-quality{padding:12px 15px;background:#12242c;border:1px solid #34515b;border-radius:6px}
+.report-provenance{margin:15px 0;border-left:3px solid #748d7e;padding:9px 12px;background:#12242b}
+#history-report-link[data-state="BYTES_MATCHED"]{border-color:#538b7b;background:#18312e;color:#d4f1e0}
+#history-report-link[data-state="HASH_MISMATCH"],#history-report-link[data-state="PLAYER_MISMATCH"],#history-report-link[data-state="COUNT_MISMATCH"]{border-color:#b28463;background:#352820;color:#ffe0c5}
+#history-report-link[data-state="HASH_UNAVAILABLE"]{border-color:#838154;background:#343222;color:#f4eabd}
+@media(max-width:850px){.history-report-panel .panel-heading{align-items:start;flex-wrap:wrap}}

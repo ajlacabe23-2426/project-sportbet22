@@ -14,6 +14,27 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Phase 5 — Report integration and local automation
+
+The mobile Performance Desk now includes a **Research report** section.
+Import the JSON produced by `sportprob.season_report` alongside the
+corresponding game-log CSV. The interface displays period and season metrics
+only after the browser matches the report to the **exact CSV SHA-256 bytes,
+ESPN player ID, and selected game count**. Replacing the dataset instantly
+hides mismatched report statistics, and displays the local missing-data
+summary. No external data is sent.
+
+The existing Python generator also supports `--auto-splits` for fixed
+retrospective 65/15/20 calendar-safe partitions and `--output-stem` to
+write both local HTML and JSON reports with one command. Existing explicit
+cutoff and output arguments remain supported.
+
+[Phase 5 Mac usage](docs/CONSOLIDATED_HISTORY_REPORT.md). Automated checks
+cover Python 3.11–3.13, browser file import, malformed report rejection,
+source mismatch, and replacement behavior. No real third-party game records
+are committed to the repo; the data rights and future forecasting remain
+independently unverified.
+
 ## Local consolidated historical performance report
 
 Use `python -m sportprob.season_report` to produce a standalone offline HTML
