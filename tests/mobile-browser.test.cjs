@@ -5,6 +5,7 @@ const {createServer}=require("node:http");
 const {spawn}=require("node:child_process");
 const {readFile,writeFile,mkdtemp,rm}=require("node:fs/promises");
 const {readFileSync}=require("node:fs");
+const {createHash}=require("node:crypto");
 const {tmpdir}=require("node:os");
 const path=require("node:path");
 const root=path.resolve(__dirname,"..");
@@ -154,10 +155,14 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       const altered=path.join(dir,"altered.csv");
       const auditFile=path.join(dir,"audit.json");
       const reportFile=path.join(dir,"history.json");
+      const historyCsv=path.join(dir,"synthetic-espn-history.csv");
       const manifest=JSON.parse(readFileSync(path.join(root,"data/demo_games.manifest.json"),"utf8"));
       await writeFile(altered,Buffer.concat([readFileSync(original),Buffer.from([10])]));
       await writeFile(auditFile,JSON.stringify(auditDoc(manifest.sha256)));
-      await writeFile(reportFile,JSON.stringify(historicalDoc(manifest.sha256)));
+      const historyBytes=readFileSync(original,"utf8").replaceAll("DEMO-001","Example Player (ESPN 3975)");
+      const historySha=createHash("sha256").update(historyBytes).digest("hex");
+      await writeFile(historyCsv,historyBytes);
+      await writeFile(reportFile,JSON.stringify(historicalDoc(historySha)));
       chrome=spawn(process.env.CHROME_BIN||"google-chrome",[
         "--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
         "--no-first-run","--no-default-browser-check",
@@ -196,8 +201,12 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       // link. The report player deliberately differs from DEMO-001, so this
       // first import must fail closed on identity rather than show any metrics.
       await attach("#history-report-json",reportFile);
-      await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='PLAYER_MISMATCH'"),"historical report/player namespace mismatch");
+      await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='HASH_MISMATCH'"),"historical report source mismatch");
       assert.equal(await js("document.getElementById('history-report-results').hidden"),true);
+      await attach("#csv-file",historyCsv);
+      await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='BYTES_MATCHED'"),"historical report matched to exact synthetic history bytes");
+      assert.equal(await js("document.getElementById('history-report-results').hidden"),false);
+      assert.equal(await js("document.getElementById('history-report-rows').children.length"),4);
       await attach("#csv-file",altered);
       await eventually(()=>js("document.getElementById('audit-link').dataset.state==='HASH_MISMATCH'"),"mutated CSV fingerprint rejection");
       await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='HASH_MISMATCH'"),"phase 5 report invalidation on changed source");
