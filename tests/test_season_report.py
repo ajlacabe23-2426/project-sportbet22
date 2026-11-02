@@ -102,6 +102,8 @@ class SeasonReportTests(unittest.TestCase):
             self.assertEqual(len(report["seasons"]), 2)
             self.assertEqual(report["seasons"]["2025"]["points"]["games"], 40)
             self.assertEqual(report["seasons"]["2026"]["points"]["games"], 40)
+            self.assertIn("2025 to 2026", report["season_to_season_mean_changes"])
+            self.assertIn("assists", report["season_to_season_mean_changes"]["2025 to 2026"])
             self.assertEqual(
                 sum(group["points"]["games"] for group in report["periods"].values()), 80
             )
@@ -113,10 +115,11 @@ class SeasonReportTests(unittest.TestCase):
             self.assertEqual(len(report["dataset_sha256"]), 64)
             page = render_html(report)
             self.assertIn("Last five completed games", page)
-            self.assertIn("A &lt;Test&gt; Player", page) if False else None
             self.assertIn("default-src 'none'", page)
             self.assertNotIn("<script>", page)
             self.assertIn("Source season 2025", page)
+            self.assertIn("Season mean change", page)
+            self.assertIn("Per 36 min", page)
             self.assertIn("Points", page)
             self.assertIn("Rebounds", page)
             self.assertIn("Assists", page)
