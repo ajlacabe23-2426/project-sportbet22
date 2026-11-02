@@ -226,7 +226,15 @@ async function handleFile(){
     games=imported;sourceName=chosen.name+" · source declared: "+declaredSource;
     demo=/demo/i.test(chosen.name)||games.some(x=>/^DEMO[-_]/i.test(x.player)||/^SYN[-_]/i.test(x.gameId));
     const players=[...new Set(games.map(g=>g.player))].sort();
-    globalThis.SportProbDataset={sha256:hash,players,synthetic:demo,records:games.length};
+    globalThis.SportProbDataset={
+      sha256:hash,players,synthetic:demo,records:games.length,
+      quality:{
+        records:games.length,
+        missingOpponent:games.filter(g=>!g.opponent).length,
+        missingMinutes:games.filter(g=>g.minutes===null).length,
+        missingLocation:games.filter(g=>g.home===null).length
+      }
+    };
     $("csv-sha256").textContent=hash
       ?"CSV SHA-256: "+hash+" · exact local file bytes"
       :"CSV SHA-256 unavailable in this browser. Matching audit inputs cannot be confirmed.";
