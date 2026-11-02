@@ -14,6 +14,19 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Local consolidated historical performance report
+
+Use `python -m sportprob.season_report` to produce a standalone offline HTML
+and JSON research report from a user-supplied regular-season browser CSV.
+It combines points, rebounds, assists, minutes, 3 chronological periods,
+season-to-season changes, venue splits, last-five history, and exact
+cross-checks to local SportsDataverse source-game IDs and DNP metadata.
+
+No network requests or dataset uploads occur. **Source rights remain
+unverified; the summary is retrospective, not calibrated forecasting.**
+
+[Mac one-command walkthrough](docs/CONSOLIDATED_HISTORY_REPORT.md).
+
 ## Two-season historical research preparation and partitions
 
 A local converter can bridge the browser-exported ESPN historical game rows
