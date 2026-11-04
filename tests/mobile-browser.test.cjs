@@ -133,7 +133,8 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
     const dir=await mkdtemp(path.join(tmpdir(),"sportprob-browser-"));
     const allowed=new Set([
       "/mobile/index.html","/mobile/styles.css","/mobile/app.js",
-      "/mobile/integrity.js","/mobile/audit.js","/mobile/history-report.js"
+      "/mobile/integrity.js","/mobile/audit.js","/mobile/history-report.js",
+      "/mobile/player-comparison.js"
     ]);
     const server=createServer(async(req,res)=>{
       const url=new URL(req.url,"http://localhost"),location=url.pathname;
@@ -156,6 +157,7 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       const auditFile=path.join(dir,"audit.json");
       const reportFile=path.join(dir,"history.json");
       const historyCsv=path.join(dir,"synthetic-espn-history.csv");
+      const multiplePlayerCsv=path.join(dir,"two-synthetic-players.csv");
       const manifest=JSON.parse(readFileSync(path.join(root,"data/demo_games.manifest.json"),"utf8"));
       await writeFile(altered,Buffer.concat([readFileSync(original),Buffer.from([10])]));
       await writeFile(auditFile,JSON.stringify(auditDoc(manifest.sha256)));
@@ -210,6 +212,21 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       await attach("#csv-file",altered);
       await eventually(()=>js("document.getElementById('audit-link').dataset.state==='HASH_MISMATCH'"),"mutated CSV fingerprint rejection");
       await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='HASH_MISMATCH'"),"phase 5 report invalidation on changed source");
+      // Exercise the actual comparison script with two synthetic players in
+      // headless Chromium, after the earlier audit invalidation checks.
+      const originalText=readFileSync(original,"utf8").trim();
+      const secondPlayerLines=originalText.split(/\r?\n/).slice(1)
+        .map(line=>line.replace("DEMO-001","DEMO-002"));
+      await writeFile(multiplePlayerCsv,originalText+"\n"+secondPlayerLines.join("\n")+"\n");
+      await attach("#csv-file",multiplePlayerCsv);
+      await eventually(()=>js("document.querySelectorAll('#comparison-rows tr').length===2"),"two-player comparison rendering");
+      assert.equal(await js("document.getElementById('comparison-window').disabled"),false);
+      assert.equal(await js("document.getElementById('comparison-rows').children[0].cells[0].textContent"),"DEMO-001");
+      assert.equal(await js("document.getElementById('comparison-rows').children[1].cells[0].textContent"),"DEMO-002");
+      await js("(()=>{const s=document.getElementById('comparison-window');s.value='5';s.dispatchEvent(new Event('change'));return true;})()");
+      assert.equal(await js("document.getElementById('comparison-rows').children[0].cells[1].textContent"),"5 / 20");
+      assert.equal(await js("document.getElementById('comparison-rows').children[0].cells[2].textContent"),"2025-11-20");
+      assert.equal(await js("document.getElementById('history-report-results').hidden"),true);
       assert.deepEqual(conn.exceptions,[],"browser produces no unhandled script exceptions");
     }finally{
       conn?.close();
