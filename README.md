@@ -18,6 +18,18 @@ Check the browser parser and static assets with `node --test tests/mobile-ui.tes
 
 The Performance Desk now includes **Player comparison** in the sidebar. Import one permitted completed-game CSV with multiple players, then choose **last 5, 10, 20 or all** observations for each player. The view displays the player's latest completed game and their **historical** points, rebounds and assists means with sample counts. Windows are **independent per player**, not matched by date or opponent. The comparison is descriptive, never a predicted next-game outcome or a wagering recommendation. It does not make network requests or retain records outside the current browser session. The comparison table displays up to 100 player summaries; the dataset's other features still process the entire permitted import.
 
+## Checksum-gated multi-player historical evaluation
+
+The offline cohort audit evaluates **previously completed** game logs for every player in an authorized, checksum-matched dataset. It reports training/holdout sample coverage, missing context, and frozen historical Negative Binomial vs same-mean Poisson diagnostics for points, rebounds, and assists when there are enough observations.
+
+```bash
+PYTHONPATH=src python3 -m sportprob.cohort_audit --data data/demo_games.csv --manifest data/demo_games.manifest.json --holdout-start 2025-11-16
+```
+
+The bundled example is synthetic; the five-game held-out sample demonstrates software behavior, not accuracy. The cutoff must be chosen **before** inspecting held-out outcomes for credible independent evaluation; code cannot prove that it was. Source permissions are user-declared and not independently verified. No live game ingestion, forecasts for upcoming events, wagering suggestions, server, or external requests are introduced.
+
+The CI browser acceptance now serves and exercises `player-comparison.js` with two constructed players, checks sample-window changes, and verifies that earlier audit reports remain invalidated after a different file import. Real local history still requires a device-side check.
+
 ## Phase 5 — Report integration and local automation
 
 The mobile Performance Desk now includes a **Research report** section.
