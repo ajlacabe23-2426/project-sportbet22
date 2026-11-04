@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="./styles.css">
 <script src="./integrity.js" defer></script>
 <script src="./app.js" defer></script>
+<script src="./player-comparison.js" defer></script>
 <script src="./audit.js" defer></script>
 <script src="./history-report.js" defer></script>
 </head>
@@ -20,6 +21,7 @@
     <div class="nav-label">WORKSPACE</div>
     <a class="nav-link active" href="#overview"><span aria-hidden="true">◉</span> Player overview</a>
     <a class="nav-link" href="#history"><span aria-hidden="true">▤</span> Game history</a>
+    <a class="nav-link" href="#comparison"><span aria-hidden="true">≋</span> Player comparison</a>
     <a class="nav-link" href="#history-report"><span aria-hidden="true">▦</span> Research report</a>
     <a class="nav-link" href="#model-audit"><span aria-hidden="true">▥</span> Model audit</a>
     <a class="nav-link" href="#integrity"><span aria-hidden="true">◇</span> Data integrity</a>
@@ -73,6 +75,18 @@
       <section id="history" class="panel log-panel" aria-labelledby="history-title">
         <div class="panel-heading"><div><div class="panel-kicker">03 / GAME HISTORY</div><h2 id="history-title">Observation log<span class="accent">.</span></h2></div><span id="rows-label" class="rows-label">0 GAMES</span></div>
         <div class="table-scroll"><table><thead><tr><th>Date</th><th>Opponent</th><th>Location</th><th>Minutes</th><th id="metric-column">PTS</th></tr></thead><tbody id="game-rows"><tr><td colspan="5" class="table-empty">Import a dataset to populate the game history.</td></tr></tbody></table></div>
+      </section>
+      <section id="comparison" class="panel comparison-panel" aria-labelledby="comparison-title">
+        <div class="panel-heading">
+          <div><div class="panel-kicker">04 / COMPLETED-GAME COMPARISON</div><h2 id="comparison-title">Compare histories<span class="accent">.</span></h2></div>
+          <div class="comparison-filter"><label for="comparison-window">Per-player sample</label>
+            <select id="comparison-window" disabled><option value="5">Last 5</option><option value="10" selected>Last 10</option><option value="20">Last 20</option><option value="all">All available</option></select>
+          </div>
+        </div>
+        <p class="context-note">Side-by-side historical averages, never predictions. Each player's window contains their own most recent completed games, which may occur on different dates against different opponents.</p>
+        <div class="table-scroll"><table><thead><tr><th>Player</th><th>Games / available</th><th>Latest game</th><th>PTS avg</th><th>REB avg</th><th>AST avg</th></tr></thead>
+          <tbody id="comparison-rows"><tr><td colspan="6" class="table-empty">Import game logs to compare players.</td></tr></tbody></table></div>
+        <p id="comparison-note" class="context-note" role="status">Import completed game histories to compare observed player averages.</p>
       </section>
       <section id="history-report" class="panel history-report-panel" aria-labelledby="history-report-title">
         <div class="panel-heading"><div><div class="panel-kicker">04 / HISTORICAL RESEARCH REPORT</div><h2 id="history-report-title">Season intelligence<span class="accent">.</span></h2></div><span class="quality-badge">LOCAL SOURCE CHECK</span></div>

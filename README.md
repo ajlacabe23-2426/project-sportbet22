@@ -14,6 +14,10 @@ The interface reports actual loaded rows only: last-5/10/20/all, averages, media
 
 Check the browser parser and static assets with `node --test tests/mobile-ui.test.cjs` (Node 22+). Full regression suite: `PYTHONPATH=src python3 -m unittest discover -s tests -v` (Python 3.11+).
 
+## Historical multi-player comparison (offline)
+
+The Performance Desk now includes **Player comparison** in the sidebar. Import one permitted completed-game CSV with multiple players, then choose **last 5, 10, 20 or all** observations for each player. The view displays the player's latest completed game and their **historical** points, rebounds and assists means with sample counts. Windows are **independent per player**, not matched by date or opponent. The comparison is descriptive, never a predicted next-game outcome or a wagering recommendation. It does not make network requests or retain records outside the current browser session. The comparison table displays up to 100 player summaries; the dataset's other features still process the entire permitted import.
+
 ## Phase 5 — Report integration and local automation
 
 The mobile Performance Desk now includes a **Research report** section.

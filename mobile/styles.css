@@ -149,3 +149,10 @@ td.table-empty{text-align:center;padding:32px;color:#89a0af}
 #history-report-link[data-state="HASH_MISMATCH"],#history-report-link[data-state="PLAYER_MISMATCH"],#history-report-link[data-state="COUNT_MISMATCH"]{border-color:#b28463;background:#352820;color:#ffe0c5}
 #history-report-link[data-state="HASH_UNAVAILABLE"]{border-color:#838154;background:#343222;color:#f4eabd}
 @media(max-width:850px){.history-report-panel .panel-heading{align-items:start;flex-wrap:wrap}}
+
+/* Offline player history comparison */
+.comparison-panel{margin-top:16px}
+.comparison-filter{display:grid;gap:5px;min-width:145px}
+.comparison-filter label{font-size:10px;font-weight:800;color:#91a5b5;letter-spacing:.08em}
+.comparison-filter select{background:#132635;color:#eff5f2;border:1px solid #354b58;border-radius:5px;padding:9px}
+.comparison-panel .table-scroll{margin-top:16px}
