@@ -228,6 +228,8 @@ async function handleFile(){
     const players=[...new Set(games.map(g=>g.player))].sort();
     globalThis.SportProbDataset={
       sha256:hash,players,synthetic:demo,records:games.length,
+      // A bounded, in-memory, descriptive subset for the offline comparison view.
+      comparisonHistory:games.map(g=>({player:g.player,date:g.date,points:g.points,rebounds:g.rebounds,assists:g.assists})),
       quality:{
         records:games.length,
         missingOpponent:games.filter(g=>!g.opponent).length,
