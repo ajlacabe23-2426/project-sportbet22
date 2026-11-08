@@ -46,6 +46,22 @@ def build_player_snapshot(
             "observed_last_20_median": round(median(getattr(r, stat) for r in recent), 3),
         }
     latest = history[-1]
+    age_days = (as_of - latest.game_date).days
+    recent_minutes = [row.minutes for row in last_five]
+    missing_venue = sum(row.home is None for row in recent)
+    zero_minute_rows = sum(
+        row.player_id == player_id and row.game_date < as_of and row.minutes == 0
+        for row in logs
+    )
+    review_flags = []
+    if age_days > 14:
+        review_flags.append("LAST_PLAYED_GAME_OVER_14_CALENDAR_DAYS_BEFORE_CUTOFF")
+    if max(recent_minutes) - min(recent_minutes) > 15:
+        review_flags.append("LARGE_LAST_FIVE_MINUTES_RANGE")
+    if missing_venue:
+        review_flags.append("MISSING_HOME_AWAY_METADATA")
+    if zero_minute_rows:
+        review_flags.append("ZERO_MINUTE_SOURCE_ROWS_EXCLUDED_FROM_MODEL")
     return {
         "schema": "sportprob-player-tri-stat-snapshot-v1",
         "mode": "OFFLINE_STATISTICAL_RESEARCH",
@@ -53,6 +69,18 @@ def build_player_snapshot(
         "as_of_exclusive": as_of.isoformat(),
         "last_observed_game": latest.game_date.isoformat(),
         "training_games": len(recent),
+        "history_coverage": {
+            "played_games_before_cutoff": len(history),
+            "model_training_games": len(recent),
+            "last_five_completed_games": len(last_five),
+            "days_since_last_played_game": age_days,
+            "last_five_observed_min_minutes": min(recent_minutes),
+            "last_five_observed_max_minutes": max(recent_minutes),
+            "missing_home_away_in_model_window": missing_venue,
+            "zero_minute_source_rows_excluded": zero_minute_rows,
+            "review_flags": review_flags,
+            "interpreted_as_injury_or_availability": False,
+        },
         "projected_minutes": round(
             forecast(logs, player_id, "points", as_of,
                      projected_minutes=projected_minutes).projected_minutes, 2
