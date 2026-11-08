@@ -45,6 +45,36 @@ class PlayerSnapshotTests(unittest.TestCase):
         updated = build_player_snapshot(self.logs + [later], "DEMO-001", cutoff)
         self.assertEqual(baseline, updated)
 
+    def test_coverage_explains_historical_sample_and_unknown_availability(self):
+        output = build_player_snapshot(self.logs, "DEMO-001", date(2025, 11, 21))
+        coverage = output["history_coverage"]
+        self.assertEqual(coverage["model_training_games"], output["training_games"])
+        self.assertEqual(coverage["last_five_completed_games"], 5)
+        self.assertLessEqual(coverage["model_training_games"], 20)
+        self.assertGreaterEqual(coverage["played_games_before_cutoff"], 5)
+        self.assertGreater(coverage["days_since_last_played_game"], 0)
+        self.assertLessEqual(coverage["last_five_observed_min_minutes"],
+                             coverage["last_five_observed_max_minutes"])
+        self.assertFalse(coverage["interpreted_as_injury_or_availability"])
+
+    def test_long_history_gap_and_zero_minute_rows_are_reviewed_not_predicted(self):
+        cutoff = date(2026, 1, 15)
+        recorded_dnp = GameLog(
+            game_id="DNP-TEST", player_id="DEMO-001",
+            game_date=date(2025, 12, 1), opponent="XXX", home=None,
+            minutes=0, points=0, rebounds=0, assists=0
+        )
+        output = build_player_snapshot(self.logs + [recorded_dnp],
+                                       "DEMO-001", cutoff)
+        coverage = output["history_coverage"]
+        self.assertGreater(coverage["days_since_last_played_game"], 14)
+        self.assertEqual(coverage["zero_minute_source_rows_excluded"], 1)
+        self.assertIn("LAST_PLAYED_GAME_OVER_14_CALENDAR_DAYS_BEFORE_CUTOFF",
+                      coverage["review_flags"])
+        self.assertIn("ZERO_MINUTE_SOURCE_ROWS_EXCLUDED_FROM_MODEL",
+                      coverage["review_flags"])
+        self.assertFalse(coverage["interpreted_as_injury_or_availability"])
+
     def test_insufficient_history_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "five completed games"):
             build_player_snapshot(self.logs, "DEMO-001", date(2025, 11, 3))
