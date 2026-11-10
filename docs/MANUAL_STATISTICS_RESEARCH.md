@@ -38,7 +38,9 @@ Optional: `--player DEMO-001` filters a single stable player ID; `--history-game
 
 Report content includes source/checksum provenance, historical games used, mean/median/sample standard deviation, observed 10th and 90th percentiles, rolling five-game averages, per-36-minute rates, venue and opponent sample counts, plus explicit missing-data limitations. None of these measures is a future prediction or evidence of calibration.
 
-To view CSV data in a mobile browser, open `mobile/index.html` and select the local CSV after declaring its source and permission. The JSON report above is a **CLI artifact** and is not automatically displayed by the existing browser; adding an explicitly verified import UI is future work.
+To view the results in a mobile browser, open `mobile/index.html`. First declare the source and permission under **Dataset control** and choose the exact same CSV that generated the manual report. Next open **Manual research** and import `outputs/manual-research-demo.json` (or another report created from that CSV). Select a player from the existing Player dropdown. The dashboard will show only that player's historical points/rebounds/assists summary after its SHA-256 fingerprint and row count match the report. Switching or rejecting a CSV hides stale metrics immediately. The browser never sends files to a server.
+
+The manual research JSON is intentionally separate from the preexisting `sportprob.season_report` historical JSON format. Choose the **Manual research** import, not the **Research report** import, for this new JSON. Neither view claims provenance has been independently verified.
 
 ## No-cost data resources for non-wagering sports analysis
 
@@ -56,6 +58,7 @@ NBA.com Stats FAQ states that NBA Stats data is **not offered as downloadable CS
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_manual_research.py' -v
 PYTHONPATH=src python3 -m unittest discover -s tests -v
+node --test tests/manual-report-ui.test.cjs
 ```
 
 Successful checksum verification establishes only that supplied local bytes match the user's declared manifest. It cannot establish the source's identity, legal permission, completeness, or statistical representativeness. This release makes no external requests and adds no gambling capabilities.
