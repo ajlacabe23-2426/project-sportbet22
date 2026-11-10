@@ -12,7 +12,7 @@ The [manual completed-game research guide](docs/MANUAL_STATISTICS_RESEARCH.md) i
 PYTHONPATH=src python3 -m sportprob.manual_research --data data/demo_games.csv --manifest data/demo_games.manifest.json --as-of 2025-11-21 --output outputs/manual-research-demo.json
 ```
 
-This example is synthetic and reports historical descriptive statistics only. The command does **not** import bookmaker lines, rank wagers, estimate gambling returns, or write data to any remote server. The existing mobile CSV viewer remains separate from this JSON report.
+This example is synthetic and reports historical descriptive statistics only. The command does **not** import bookmaker lines, rank wagers, estimate gambling returns, or write data to any remote server. The mobile **Manual research** panel can import the generated JSON after the corresponding CSV has been loaded under Dataset control. Its local SHA-256 and row-count checks must match before showing a selected player's completed-game statistics. This remains historical research, not a future-event forecast.
 
 ## Performance Desk (mobile-first offline interface)
 
