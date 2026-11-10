@@ -4,6 +4,12 @@ A **simulation-only sports statistics research platform**. SportProb estimates p
 
 **Research only:** No live betting, sportsbook data ingestion, odds comparison, wager recommendations, or bankroll calculations. All bundled observations are explicitly **synthetic**, not real player data.
 
+## Hosted dashboard verification
+
+The Pages workflow now includes a post-deployment HTTP smoke test to check that the real site and its required JavaScript/CSS files load, and that only an authored synthetic demonstration CSV is publicly available. The frontend also provides an on-page **Download synthetic demo CSV** link to help verify the import and Instant stats workflow on a phone. These checks do not independently verify the real-world accuracy or licensing of imported user datasets.
+
+See [GitHub Pages setup, hosted smoke test and synthetic phone acceptance](docs/GITHUB_PAGES_HOSTING.md). A live URL is **not confirmed** until the repository's Pages source has been enabled and the deployment job has succeeded.
+
 ## GitHub Pages static hosting setup
 
 A GitHub Pages workflow in `.github/workflows/pages.yml` can serve the browser-only `mobile/` directory after a repository administrator enables **Settings → Pages → Source: GitHub Actions**. The workflow publishes on qualifying `main` changes and exposes the final URL in the `github-pages` environment. Until a successful deployment is verified, **do not treat the application as publicly hosted**.
