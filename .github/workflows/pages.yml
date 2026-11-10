@@ -1,0 +1,52 @@
+name: Publish offline Performance Desk
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - mobile/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sportprob-github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify offline browser behavior
+        run: >-
+          node --test
+          tests/mobile-ui.test.cjs
+          tests/history-report-ui.test.cjs
+          tests/player-comparison.test.cjs
+          tests/manual-report-ui.test.cjs
+          tests/instant-research.test.cjs
+          tests/manual-entry.test.cjs
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload only static research dashboard assets
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: mobile
+      - name: Deploy verified static artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
