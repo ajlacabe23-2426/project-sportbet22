@@ -41,6 +41,8 @@ jobs:
           tests/manual-report-ui.test.cjs
           tests/instant-research.test.cjs
           tests/manual-entry.test.cjs
+      - name: Check static assets and synthetic demo fixture
+        run: node tests/hosted-pages-smoke.cjs --local-only
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload only static research dashboard assets
@@ -50,3 +52,7 @@ jobs:
       - name: Deploy verified static artifact
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify deployed page and all local assets
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: node tests/hosted-pages-smoke.cjs "$PAGE_URL"
