@@ -4,6 +4,12 @@ A **simulation-only sports statistics research platform**. SportProb estimates p
 
 **Research only:** No live betting, sportsbook data ingestion, odds comparison, wager recommendations, or bankroll calculations. All bundled observations are explicitly **synthetic**, not real player data.
 
+## GitHub Pages static hosting setup
+
+A GitHub Pages workflow in `.github/workflows/pages.yml` can serve the browser-only `mobile/` directory after a repository administrator enables **Settings → Pages → Source: GitHub Actions**. The workflow publishes on qualifying `main` changes and exposes the final URL in the `github-pages` environment. Until a successful deployment is verified, **do not treat the application as publicly hosted**.
+
+[Enable Pages and run the phone acceptance checklist](docs/GITHUB_PAGES_HOSTING.md).
+
 ## Manual completed-game entry (phone-first)
 
 The Performance Desk now supports entering completed-game observations individually in the **Enter game logs** panel. Add player/date/minutes/points/rebounds/assists records, declare the source and research permissions in Dataset control, then use **Analyze draft** to run the exact same validated CSV import path. **Export CSV** preserves the draft to a file; no browser storage, account, or network transfer is involved. Closing or reloading the page clears unexported entries.
