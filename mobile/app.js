@@ -230,6 +230,12 @@ async function handleFile(){
       sha256:hash,players,synthetic:demo,records:games.length,
       // A bounded, in-memory, descriptive subset for the offline comparison view.
       comparisonHistory:games.map(g=>({player:g.player,date:g.date,points:g.points,rebounds:g.rebounds,assists:g.assists})),
+      // Browser-only historical research receives the same validated rows
+      // without retaining a second raw file or uploading it anywhere.
+      directResearchHistory:games.map(g=>({
+        player:g.player,date:g.date,gameId:g.gameId,minutes:g.minutes,
+        points:g.points,rebounds:g.rebounds,assists:g.assists
+      })),
       quality:{
         records:games.length,
         missingOpponent:games.filter(g=>!g.opponent).length,
