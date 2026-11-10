@@ -4,6 +4,14 @@ A **simulation-only sports statistics research platform**. SportProb estimates p
 
 **Research only:** No live betting, sportsbook data ingestion, odds comparison, wager recommendations, or bankroll calculations. All bundled observations are explicitly **synthetic**, not real player data.
 
+## Instant browser statistics (no Python command)
+
+The Performance Desk now has an **Instant stats** section for local, completed-game research. Import an authorized CSV once under Dataset control, then choose a player, inclusive historical cutoff, and last 5/10/20/all played games. The browser calculates means, medians, sample standard deviations, observed percentile ranges, recent-five comparisons, and per-36-minute rates when no minutes are missing. No JSON generation, network request, or database is required.
+
+The older **Manual research** section remains available for checksum-gated Python JSON reports and is distinct from this browser-only path. The project is not publicly hosted by these changes, and physical iPhone Safari testing and independent real-data acceptance are not yet verified.
+
+[Instant offline browser walkthrough](docs/IN_BROWSER_RESEARCH.md).
+
 ## Manual statistics research workflow (offline)
 
 The [manual completed-game research guide](docs/MANUAL_STATISTICS_RESEARCH.md) is the dedicated workflow for local CSV entry, source-rights/checksum verification, chronological historical summaries, and quality checks. It reuses the existing canonical game-log importer and avoids another conflicting data pipeline.
