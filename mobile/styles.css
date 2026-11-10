@@ -185,3 +185,8 @@ td.table-empty{text-align:center;padding:32px;color:#89a0af}
 .entry-remove{padding:7px 10px;border-radius:6px;cursor:pointer}
 @media(max-width:850px){.entry-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.entry-form{grid-template-columns:1fr}.entry-actions{display:grid;grid-template-columns:1fr 1fr}.entry-actions #entry-analyze{grid-column:1/-1}}
+
+/* Synthetic-only, downloadable browser acceptance fixture. */
+.source-demo-link{font-size:11px;color:#a7bcc3;line-height:1.7;margin:10px 0 0;max-width:720px}
+.source-demo-link a{color:#d9fc77;text-decoration:underline;text-underline-offset:3px}
+.source-demo-link a:focus-visible{outline:2px solid #d9fc77;outline-offset:3px}
