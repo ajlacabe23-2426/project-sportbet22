@@ -111,7 +111,7 @@ jobs:
         with:
           node-version: "22"
       - name: Offline mobile application and CSV parser checks
-        run: node --test tests/mobile-ui.test.cjs tests/history-report-ui.test.cjs tests/player-comparison.test.cjs
+        run: node --test tests/mobile-ui.test.cjs tests/history-report-ui.test.cjs tests/player-comparison.test.cjs tests/manual-report-ui.test.cjs
       - name: Test actual offline CSV/audit import in headless Chromium
         env:
           RUN_BROWSER_ACCEPTANCE: "1"
