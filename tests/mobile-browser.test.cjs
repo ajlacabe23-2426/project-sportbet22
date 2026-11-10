@@ -160,6 +160,7 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       "/mobile/index.html","/mobile/styles.css","/mobile/app.js",
       "/mobile/integrity.js","/mobile/audit.js","/mobile/history-report.js",
       "/mobile/manual-report.js",
+      "/mobile/instant-research.js",
       "/mobile/player-comparison.js"
     ]);
     const server=createServer(async(req,res)=>{
@@ -221,6 +222,15 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       await attach("#csv-file",original);
       await eventually(()=>js("document.getElementById('load-status').textContent.includes('SYNTHETIC SAMPLE LOADED')"),"synthetic historical CSV load");
       assert.equal(await js("document.getElementById('csv-sha256').textContent.includes('"+manifest.sha256+"')"),true);
+      await eventually(()=>js("document.getElementById('instant-results').hidden===false"),"phone research completes from CSV without Python");
+      assert.equal(await js("document.getElementById('instant-rows').children.length"),3);
+      assert.equal(await js("document.getElementById('instant-through').value"),"2025-11-20");
+      await js("(()=>{const el=document.getElementById('instant-through');el.value='2025-11-04';el.dispatchEvent(new Event('change'));return true;})()");
+      assert.equal(await js("document.getElementById('instant-results').hidden"),true);
+      assert.equal(await js("document.getElementById('instant-status').textContent.includes('Insufficient history')"),true);
+      await js("(()=>{const el=document.getElementById('instant-through');el.value='2025-11-20';el.dispatchEvent(new Event('change'));return true;})()");
+      await eventually(()=>js("document.getElementById('instant-results').hidden===false"),"cutoff restoration");
+
       await attach("#manual-report-json",manualFile);
       await eventually(()=>js("document.getElementById('manual-report-link').dataset.state==='BYTES_MATCHED'"),"manual report linked to CSV");
       assert.equal(await js("document.getElementById('manual-report-results').hidden"),false);
@@ -261,6 +271,15 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       assert.equal(await js("document.getElementById('comparison-rows').children[0].cells[1].textContent"),"5 / 20");
       assert.equal(await js("document.getElementById('comparison-rows').children[0].cells[2].textContent"),"2025-11-20");
       assert.equal(await js("document.getElementById('history-report-results').hidden"),true);
+
+      await js("(()=>{const p=document.getElementById('player');p.value='DEMO-002';p.dispatchEvent(new Event('change'));return true;})()");
+      await eventually(()=>js("document.getElementById('instant-status').textContent.includes('DEMO-002')"),"selected player updates phone research");
+      const invalidCsv=path.join(dir,"invalid.csv");
+      await writeFile(invalidCsv,"player,date,points,rebounds,assists\nBroken,2026-02-30,20,3,4\n");
+      await attach("#csv-file",invalidCsv);
+      await eventually(()=>js("document.getElementById('load-status').textContent.includes('IMPORT REJECTED')"),"invalid replacement CSV rejection");
+      assert.equal(await js("document.getElementById('instant-results').hidden"),true);
+      assert.equal(await js("document.getElementById('instant-through').disabled"),true);
       assert.deepEqual(conn.exceptions,[],"browser produces no unhandled script exceptions");
     }finally{
       conn?.close();
