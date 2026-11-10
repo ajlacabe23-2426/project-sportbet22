@@ -14,6 +14,7 @@
 <script src="./audit.js" defer></script>
 <script src="./history-report.js" defer></script>
 <script src="./manual-report.js" defer></script>
+<script src="./instant-research.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -23,6 +24,7 @@
     <a class="nav-link active" href="#overview"><span aria-hidden="true">◉</span> Player overview</a>
     <a class="nav-link" href="#history"><span aria-hidden="true">▤</span> Game history</a>
     <a class="nav-link" href="#comparison"><span aria-hidden="true">≋</span> Player comparison</a>
+    <a class="nav-link" href="#instant-research"><span aria-hidden="true">▤</span> Instant stats</a>
     <a class="nav-link" href="#manual-report"><span aria-hidden="true">▣</span> Manual research</a>
     <a class="nav-link" href="#history-report"><span aria-hidden="true">▦</span> Research report</a>
     <a class="nav-link" href="#model-audit"><span aria-hidden="true">▥</span> Model audit</a>
@@ -89,6 +91,21 @@
         <div class="table-scroll"><table><thead><tr><th>Player</th><th>Games / available</th><th>Latest game</th><th>PTS avg</th><th>REB avg</th><th>AST avg</th></tr></thead>
           <tbody id="comparison-rows"><tr><td colspan="6" class="table-empty">Import game logs to compare players.</td></tr></tbody></table></div>
         <p id="comparison-note" class="context-note" role="status">Import completed game histories to compare observed player averages.</p>
+      </section>
+      <section id="instant-research" class="panel history-report-panel" aria-labelledby="instant-research-title">
+        <div class="panel-heading"><div><div class="panel-kicker">04 / INSTANT LOCAL RESEARCH</div><h2 id="instant-research-title">Research on your phone<span class="accent">.</span></h2></div><span class="quality-badge">NO PYTHON NEEDED</span></div>
+        <p class="audit-explainer">Use the player selected above and a date cutoff to calculate three-stat historical summaries directly from your authorized CSV. All processing stays in this browser session. This describes completed games only, not future performance.</p>
+        <div class="instant-controls">
+          <div><label for="instant-through">Include games through</label><input id="instant-through" type="date" disabled aria-describedby="instant-help"></div>
+          <div><label for="instant-window">Most recent completed games</label><select id="instant-window" disabled><option value="5">Last 5</option><option value="10">Last 10</option><option value="20" selected>Last 20</option><option value="all">All through cutoff</option></select></div>
+        </div>
+        <p id="instant-help" class="context-note">Cutoff is inclusive. Excludes zero-minute games and never adds observations dated after the selected cutoff. Select another player above to refresh.</p>
+        <p id="instant-status" class="audit-status" role="status">Import an authorized completed-game CSV to calculate research statistics on this device.</p>
+        <div id="instant-results" hidden>
+          <div class="table-scroll"><table><thead><tr><th>Statistic</th><th>Mean</th><th>Median</th><th>Sample SD</th><th>Last 5</th><th>Previous 5</th><th>Per 36 min</th><th>Observed P10–P90</th></tr></thead><tbody id="instant-rows"></tbody></table></div>
+          <p id="instant-provenance" class="report-provenance"></p>
+        </div>
+        <p class="context-note">Five or more earlier completed observations are required. Missing minutes mean per-36 rates cannot be calculated. Source authenticity and statistical validity are not independently certified.</p>
       </section>
       <section id="manual-report" class="panel history-report-panel" aria-labelledby="manual-report-title">
         <div class="panel-heading"><div><div class="panel-kicker">04 / MANUAL HISTORICAL STATISTICS</div><h2 id="manual-report-title">Imported research<span class="accent">.</span></h2></div><span class="quality-badge">LOCAL CSV MATCH</span></div>
