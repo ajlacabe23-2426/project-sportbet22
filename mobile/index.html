@@ -15,6 +15,7 @@
 <script src="./history-report.js" defer></script>
 <script src="./manual-report.js" defer></script>
 <script src="./instant-research.js" defer></script>
+<script src="./manual-entry.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -24,6 +25,7 @@
     <a class="nav-link active" href="#overview"><span aria-hidden="true">◉</span> Player overview</a>
     <a class="nav-link" href="#history"><span aria-hidden="true">▤</span> Game history</a>
     <a class="nav-link" href="#comparison"><span aria-hidden="true">≋</span> Player comparison</a>
+    <a class="nav-link" href="#manual-entry"><span aria-hidden="true">✎</span> Manual entry</a>
     <a class="nav-link" href="#instant-research"><span aria-hidden="true">▤</span> Instant stats</a>
     <a class="nav-link" href="#manual-report"><span aria-hidden="true">▣</span> Manual research</a>
     <a class="nav-link" href="#history-report"><span aria-hidden="true">▦</span> Research report</a>
@@ -44,6 +46,27 @@
           <div class="hero-tags"><span>COMPLETED GAMES</span><span>TRANSPARENT METHODS</span><span>LOCAL DATA</span></div>
         </div>
         <div class="hero-graphic" aria-hidden="true"><div class="court-circle outer"></div><div class="court-circle inner"></div><div class="court-line one"></div><div class="court-line two"></div><div class="hero-number">01 <span>/</span> 03</div></div>
+      </section>
+      <section id="manual-entry" class="panel entry-panel" aria-labelledby="entry-title">
+        <div class="panel-heading"><div><div class="panel-kicker">01 / MANUAL COMPLETED-GAME INPUT</div><h2 id="entry-title">Enter game logs<span class="accent">.</span></h2></div><span class="quality-badge">ON-DEVICE DRAFT</span></div>
+        <p class="audit-explainer">Type completed-game observations when you do not have a CSV file. Draft rows stay in browser memory. Export a CSV to keep them; analyzing the draft uses the same validated Dataset control importer.</p>
+        <form id="entry-form" class="entry-form">
+          <div class="entry-field"><label for="entry-player">Player name or stable ID</label><input id="entry-player" name="player_id" type="text" maxlength="110" required autocomplete="off" placeholder="Example Player"></div>
+          <div class="entry-field"><label for="entry-date">Game date</label><input id="entry-date" name="game_date" type="date" required></div>
+          <div class="entry-field"><label for="entry-opponent">Opponent (optional)</label><input id="entry-opponent" name="opponent" type="text" maxlength="90" autocomplete="off" placeholder="Opponent"></div>
+          <div class="entry-field"><label for="entry-home">Location</label><select id="entry-home" name="home"><option value="">Unknown</option><option value="true">Home</option><option value="false">Away</option></select></div>
+          <div class="entry-field"><label for="entry-minutes">Played minutes</label><input id="entry-minutes" name="minutes" inputmode="decimal" type="text" required placeholder="30 or 30:30"></div>
+          <div class="entry-field"><label for="entry-points">Points</label><input id="entry-points" name="points" inputmode="numeric" type="number" min="0" max="200" step="1" required></div>
+          <div class="entry-field"><label for="entry-rebounds">Rebounds</label><input id="entry-rebounds" name="rebounds" inputmode="numeric" type="number" min="0" max="200" step="1" required></div>
+          <div class="entry-field"><label for="entry-assists">Assists</label><input id="entry-assists" name="assists" inputmode="numeric" type="number" min="0" max="200" step="1" required></div>
+          <div class="entry-field"><label for="entry-game-id">Game ID (optional)</label><input id="entry-game-id" name="game_id" type="text" maxlength="120" autocomplete="off" placeholder="For two games on one date"></div>
+          <div class="entry-add"><button type="submit" class="upload-button">＋ Add completed game</button></div>
+        </form>
+        <p class="context-note">Manual input is limited to 500 completed-game rows. An optional unique game ID is required to distinguish two games for the same player on the same date.</p>
+        <p id="entry-count" class="context-note">0 completed games in this device-only draft.</p>
+        <div class="table-scroll"><table><thead><tr><th>Date</th><th>Player</th><th>Opponent</th><th>Minutes</th><th>PTS / REB / AST</th><th>Action</th></tr></thead><tbody id="entry-rows"></tbody></table></div>
+        <div class="entry-actions"><button type="button" id="entry-analyze" class="upload-button" disabled>Analyze draft</button><button type="button" id="entry-export" class="entry-secondary" disabled>Export CSV</button><button type="button" id="entry-clear" class="entry-secondary">Clear draft</button></div>
+        <p id="entry-status" class="audit-status" role="status">Add completed-game records. Enter a source and confirm research permission in Dataset control before analyzing.</p>
       </section>
       <section class="import-panel" aria-labelledby="source-title">
         <div class="source-head"><div class="section-index">01 / SOURCE</div><div class="source-heading"><h2 id="source-title">Dataset control</h2><p>Bring a permitted player game-log CSV. It stays on this device.</p></div></div>

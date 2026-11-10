@@ -205,8 +205,7 @@ function setBusy(busy){
   $("player").disabled=busy;$("stat").disabled=busy;
   document.querySelector(".range-field").disabled=busy;
 }
-async function handleFile(){
-  const chosen=$("csv-file").files?.[0];
+async function importFile(chosen){
   if(!chosen)return;
   const currentImport=++importSequence;
   setBusy(true);
@@ -288,7 +287,9 @@ async function handleFile(){
     announceDatasetChange();
   }
 }
-$("csv-file").addEventListener("change",handleFile);
+// Both the file picker and user-entered CSV take the exact same validation path.
+globalThis.SportProbIngestFile=importFile;
+$("csv-file").addEventListener("change",()=>importFile($("csv-file").files?.[0]));
 $("player").addEventListener("change",render);
 $("stat").addEventListener("change",render);
 for(const button of document.querySelectorAll("[data-range]")){

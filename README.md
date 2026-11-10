@@ -4,6 +4,12 @@ A **simulation-only sports statistics research platform**. SportProb estimates p
 
 **Research only:** No live betting, sportsbook data ingestion, odds comparison, wager recommendations, or bankroll calculations. All bundled observations are explicitly **synthetic**, not real player data.
 
+## Manual completed-game entry (phone-first)
+
+The Performance Desk now supports entering completed-game observations individually in the **Enter game logs** panel. Add player/date/minutes/points/rebounds/assists records, declare the source and research permissions in Dataset control, then use **Analyze draft** to run the exact same validated CSV import path. **Export CSV** preserves the draft to a file; no browser storage, account, or network transfer is involved. Closing or reloading the page clears unexported entries.
+
+This is descriptive educational sports research. It does not use bookmaker odds or provide wagering tools. [Step-by-step phone manual entry instructions](docs/MANUAL_GAME_ENTRY.md).
+
 ## Instant browser statistics (no Python command)
 
 The Performance Desk now has an **Instant stats** section for local, completed-game research. Import an authorized CSV once under Dataset control, then choose a player, inclusive historical cutoff, and last 5/10/20/all played games. The browser calculates means, medians, sample standard deviations, observed percentile ranges, recent-five comparisons, and per-36-minute rates when no minutes are missing. No JSON generation, network request, or database is required.

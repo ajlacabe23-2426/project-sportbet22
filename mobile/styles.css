@@ -167,3 +167,21 @@ td.table-empty{text-align:center;padding:32px;color:#89a0af}
 #instant-results[hidden]{display:none}
 #instant-results .table-scroll{margin-top:12px}
 @media(max-width:640px){.instant-controls{grid-template-columns:1fr;gap:13px}}
+
+
+/* Local manual game log entry and file export; narrow touch-safe controls. */
+.entry-panel{margin-bottom:17px}
+.entry-panel h2{font-size:clamp(24px,2.6vw,34px);line-height:1.1}
+.entry-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.entry-field{display:grid;gap:6px;min-width:0}
+.entry-field label{font-size:11px;color:#a7bcc3;font-weight:700}
+.entry-field input,.entry-field select{width:100%;min-height:44px;padding:10px 12px;color:#eff5f2;background:#132635;border:1px solid #445865;border-radius:6px;font:inherit;min-width:0;color-scheme:dark}
+.entry-add{display:flex;align-items:end}
+.entry-add button{min-height:44px;cursor:pointer;border:none;font:inherit}
+.entry-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.entry-actions button{min-height:44px;padding:10px 14px;border-radius:6px;cursor:pointer;font:inherit}
+.entry-actions button:disabled{opacity:.45;cursor:not-allowed}
+.entry-secondary,.entry-remove{border:1px solid #506773;background:#1b303b;color:#d5e9ee}
+.entry-remove{padding:7px 10px;border-radius:6px;cursor:pointer}
+@media(max-width:850px){.entry-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.entry-form{grid-template-columns:1fr}.entry-actions{display:grid;grid-template-columns:1fr 1fr}.entry-actions #entry-analyze{grid-column:1/-1}}
