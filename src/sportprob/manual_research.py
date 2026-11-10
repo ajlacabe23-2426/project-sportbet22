@@ -87,6 +87,7 @@ def build_manual_research_report(
             "rights_independently_verified": False,
         },
         "as_of_exclusive": as_of.isoformat(),
+        "total_input_records": len(logs),
         "history_games_limit": history_games,
         "players": players,
         "insufficient_history": insufficient,
