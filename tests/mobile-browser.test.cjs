@@ -77,6 +77,31 @@ function auditDoc(sha){
     scores:[score("negative_binomial_provisional"),score("poisson_same_mean_benchmark")]
   };
 }
+function manualDoc(sha){
+  const byStat=Object.fromEntries(["points","rebounds","assists"].map(stat=>[
+    stat,{
+      schema:"sportprob-retrospective-context-v1",
+      research_only:true,future_prediction:false,player_id:"DEMO-001",stat,
+      as_of_exclusive:"2025-11-21",games_used:20,
+      first_game:"2025-11-01",last_game:"2025-11-20",
+      average:20,median:20,sample_standard_deviation:3,
+      observed_10th_percentile:12,observed_90th_percentile:28,
+      average_minutes:30,production_per_36_played_minutes:24,
+      last_five_average:21,preceding_five_average:19
+    }
+  ]));
+  return {
+    schema:"sportprob-manual-statistics-v1",
+    research_only:true,future_prediction:false,wagering_outputs:false,
+    dataset:{id:"synthetic-manual-demo",source_name:"Synthetic authored browser fixture",
+      sha256:sha,synthetic:true,rights_status_user_declared:"cleared",
+      rights_independently_verified:false},
+    total_input_records:20,history_games_limit:40,
+    as_of_exclusive:"2025-11-21",
+    players:[{player_id:"DEMO-001",played_games_before_cutoff:20,statistics:byStat}],
+    insufficient_history:[]
+  };
+}
 function historicalDoc(sha){
   const csv=readFileSync(path.join(root,"data/demo_games.csv"),"utf8").trim().split(/\r?\n/);
   const headers=csv.shift().split(",");
@@ -134,6 +159,7 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
     const allowed=new Set([
       "/mobile/index.html","/mobile/styles.css","/mobile/app.js",
       "/mobile/integrity.js","/mobile/audit.js","/mobile/history-report.js",
+      "/mobile/manual-report.js",
       "/mobile/player-comparison.js"
     ]);
     const server=createServer(async(req,res)=>{
@@ -155,12 +181,14 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       const original=path.join(root,"data/demo_games.csv");
       const altered=path.join(dir,"altered.csv");
       const auditFile=path.join(dir,"audit.json");
+      const manualFile=path.join(dir,"manual.json");
       const reportFile=path.join(dir,"history.json");
       const historyCsv=path.join(dir,"synthetic-espn-history.csv");
       const multiplePlayerCsv=path.join(dir,"two-synthetic-players.csv");
       const manifest=JSON.parse(readFileSync(path.join(root,"data/demo_games.manifest.json"),"utf8"));
       await writeFile(altered,Buffer.concat([readFileSync(original),Buffer.from([10])]));
       await writeFile(auditFile,JSON.stringify(auditDoc(manifest.sha256)));
+      await writeFile(manualFile,JSON.stringify(manualDoc(manifest.sha256)));
       const historyBytes=readFileSync(original,"utf8").replaceAll("DEMO-001","Example Player (ESPN 3975)");
       const historySha=createHash("sha256").update(historyBytes).digest("hex");
       await writeFile(historyCsv,historyBytes);
@@ -193,6 +221,10 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       await attach("#csv-file",original);
       await eventually(()=>js("document.getElementById('load-status').textContent.includes('SYNTHETIC SAMPLE LOADED')"),"synthetic historical CSV load");
       assert.equal(await js("document.getElementById('csv-sha256').textContent.includes('"+manifest.sha256+"')"),true);
+      await attach("#manual-report-json",manualFile);
+      await eventually(()=>js("document.getElementById('manual-report-link').dataset.state==='BYTES_MATCHED'"),"manual report linked to CSV");
+      assert.equal(await js("document.getElementById('manual-report-results').hidden"),false);
+      assert.equal(await js("document.getElementById('manual-report-rows').children.length"),3);
       await attach("#audit-json",auditFile);
       await eventually(()=>js("document.getElementById('audit-link').dataset.state==='BYTES_MATCHED'"),"byte-level CSV/audit match");
       await js("(()=>{const s=document.getElementById('stat');s.value='rebounds';s.dispatchEvent(new Event('change'));return true;})()");
@@ -211,6 +243,8 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       assert.equal(await js("document.getElementById('history-report-rows').children.length"),4);
       await attach("#csv-file",altered);
       await eventually(()=>js("document.getElementById('audit-link').dataset.state==='HASH_MISMATCH'"),"mutated CSV fingerprint rejection");
+      await eventually(()=>js("document.getElementById('manual-report-link').dataset.state==='HASH_MISMATCH'"),"manual report invalidation on changed source");
+      assert.equal(await js("document.getElementById('manual-report-results').hidden"),true);
       await eventually(()=>js("document.getElementById('history-report-link').dataset.state==='HASH_MISMATCH'"),"phase 5 report invalidation on changed source");
       // Exercise the actual comparison script with two synthetic players in
       // headless Chromium, after the earlier audit invalidation checks.
