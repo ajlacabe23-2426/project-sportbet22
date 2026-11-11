@@ -11,7 +11,7 @@ const catalogText=fs.readFileSync(path.join(root,"mobile/datasets/catalog.json")
 const sourceBytes=fs.readFileSync(path.join(root,"mobile/demo_games.csv"));
 const moduleExports=()=>{
   const module={exports:{}};
-  vm.runInNewContext(moduleText,{module,console},{filename:"mobile/source-manager.js"});
+  vm.runInNewContext(moduleText,{module,console,URL},{filename:"mobile/source-manager.js"});
   return module.exports;
 };
 test("only fictional, public-static source entries with exact provenance pass",()=>{
