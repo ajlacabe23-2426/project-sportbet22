@@ -4,6 +4,7 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
 const {setTimeout:sleep}=require("node:timers/promises");
+const {createHash}=require("node:crypto");
 
 const root=path.resolve(__dirname,"..");
 const mobile=path.join(root,"mobile");
@@ -14,11 +15,19 @@ function localContract(){
   const demo=fs.readFileSync(path.join(mobile,"demo_games.csv"));
   assert.deepEqual(demo,expectedDemo,
     "Bundled public demonstration must match only the repository's synthetic source");
-  for(const id of ["csv-file","manual-entry","instant-research","entry-form","instant-rows"]){
+  const catalog=JSON.parse(fs.readFileSync(path.join(mobile,"datasets/catalog.json"),"utf8"));
+  assert.equal(catalog.schema,"sportprob-hosted-source-catalog-v1");
+  assert.equal(catalog.datasets.length,1,"Public hosted data remains synthetic-only");
+  const entry=catalog.datasets[0];
+  assert.equal(entry.synthetic,true);
+  assert.equal(entry.file,"demo_games.csv");
+  assert.equal(entry.records,20);
+  assert.equal(entry.sha256,createHash("sha256").update(demo).digest("hex"));
+  for(const id of ["csv-file","manual-entry","instant-research","entry-form","instant-rows","source-manager","hosted-load"]){
     assert.ok(html.includes('id="'+id+'"'),"Missing static UI element: "+id);
   }
   assert.match(html,/href="\.\/demo_games\.csv"/);
-  assert.match(html,/connect-src 'none'/);
+  assert.match(html,/connect-src 'self'/);
   const scripts=[...html.matchAll(/<script src="\.\/([^"]+)" defer><\/script>/g)].map(match=>match[1]);
   assert.ok(scripts.length>=6,"Expected local JavaScript modules");
   assert.equal(scripts.length,new Set(scripts).size,"Duplicate script path");
@@ -56,15 +65,23 @@ async function smoke(url){
   const html=page.bytes.toString("utf8");
   assert.ok(html.includes('id="instant-research"'),"Published page lacks instant research panel");
   assert.ok(html.includes('id="csv-file"'),"Published page lacks CSV importer");
-  assert.ok(html.includes("connect-src 'none'"),"Offline-only content policy missing");
+  assert.ok(html.includes("connect-src 'self'"),"Offline-only content policy missing");
 
-  for(const asset of [...scripts,"styles.css","demo_games.csv"]){
+  for(const asset of [...scripts,"styles.css","demo_games.csv","datasets/catalog.json"]){
     const location=new URL(asset,base);
     const file=await remoteFile(location.href);
     assert.equal(file.response.status,200,asset+" returned HTTP "+file.response.status);
     assert.ok(file.bytes.length>0,asset+" was empty");
     if(asset==="demo_games.csv")assert.deepEqual(file.bytes,expectedDemo,
       "Published synthetic CSV bytes changed");
+    if(asset==="datasets/catalog.json"){
+      const catalog=JSON.parse(file.bytes.toString("utf8"));
+      assert.equal(catalog.schema,"sportprob-hosted-source-catalog-v1");
+      assert.equal(catalog.datasets.length,1);
+      assert.equal(catalog.datasets[0].synthetic,true);
+      assert.equal(catalog.datasets[0].sha256,
+        createHash("sha256").update(expectedDemo).digest("hex"));
+    }
     if(asset==="instant-research.js")
       assert.ok(file.bytes.toString("utf8").includes("summarizeCompletedGames"));
     process.stdout.write("PASS "+asset+" HTTP 200\n");
