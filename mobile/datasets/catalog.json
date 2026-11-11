@@ -1,0 +1,19 @@
+{
+  "schema": "sportprob-hosted-source-catalog-v1",
+  "last_catalog_review": "2026-11-11",
+  "datasets": [
+    {
+      "id": "synthetic-player-history-v1",
+      "label": "Synthetic player history — demonstration",
+      "source": "SportProb hand-authored synthetic fixture",
+      "file": "demo_games.csv",
+      "sha256": "8bfb10a5d2b0e84602b1af79ef1e75a3bd6a7d67901cc6b9780ba2ba6f6ae56b",
+      "records": 20,
+      "synthetic": true,
+      "last_game_date": "2025-11-20",
+      "snapshot_date": "2026-10-24",
+      "rights_basis": "Original fictional records authored for this repository, not sourced from real basketball games",
+      "distribution": "public_static"
+    }
+  ]
+}
