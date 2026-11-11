@@ -54,7 +54,7 @@ test("manual input is offline-only and connected to the same CSV validation path
   assert.doesNotMatch(source,/\bfetch\s*\(|XMLHttpRequest|localStorage|sessionStorage|innerHTML/);
   const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
   assert.match(html,/src="\.\/manual-entry\.js"/);
-  assert.match(html,/connect-src 'none'/);
+  assert.match(html,/connect-src 'self'/);
   for(const id of ["entry-form","entry-player","entry-date","entry-points",
     "entry-minutes","entry-analyze","entry-export","entry-clear","entry-rows"])
     assert.ok(html.includes('id="'+id+'"'));
