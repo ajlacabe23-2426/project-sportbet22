@@ -40,7 +40,7 @@ jobs:
           tests/player-comparison.test.cjs
           tests/manual-report-ui.test.cjs
           tests/instant-research.test.cjs
-          tests/manual-entry.test.cjs
+          tests/manual-entry.test.cjs tests/hosted-source-manager.test.cjs
       - name: Check static assets and synthetic demo fixture
         run: node tests/hosted-pages-smoke.cjs --local-only
       - name: Configure GitHub Pages
