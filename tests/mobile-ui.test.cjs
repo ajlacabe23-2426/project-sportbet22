@@ -22,7 +22,7 @@ test("mobile application has valid JavaScript syntax and uses no network APIs",(
   const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
   assert.match(html,/src="\.\/app\.js"/);
   assert.match(html,/href="\.\/styles\.css"/);
-  assert.match(html,/connect-src 'none'/);
+  assert.match(html,/connect-src 'self'/);
   for(const id of ["csv-file","player","stat","series-chart","game-rows","load-status"])
     assert.match(html,new RegExp('id="'+id+'"'));
 });

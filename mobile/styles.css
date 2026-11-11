@@ -190,3 +190,16 @@ td.table-empty{text-align:center;padding:32px;color:#89a0af}
 .source-demo-link{font-size:11px;color:#a7bcc3;line-height:1.7;margin:10px 0 0;max-width:720px}
 .source-demo-link a{color:#d9fc77;text-decoration:underline;text-underline-offset:3px}
 .source-demo-link a:focus-visible{outline:2px solid #d9fc77;outline-offset:3px}
+
+
+/* Read-only, same-origin public dataset selector. No server-side user uploads. */
+.hosted-source-panel{margin:17px 0}
+.hosted-source-panel h2{font-size:clamp(24px,2.6vw,34px);line-height:1.1}
+.hosted-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:14px;margin:18px 0}
+.hosted-selector{display:grid;gap:7px;min-width:0}
+.hosted-selector label{font-size:11px;font-weight:700;color:#acbfc8}
+.hosted-selector select{min-height:46px;border:1px solid #405b68;background:#132635;color:#eff5f2;border-radius:6px;padding:10px 12px;width:100%}
+.hosted-controls button{border:0;min-height:46px;font:inherit;padding:10px 18px}
+.hosted-controls button:disabled,.hosted-selector select:disabled{opacity:.5;cursor:not-allowed}
+#hosted-source-status{overflow-wrap:anywhere}
+@media(max-width:600px){.hosted-controls{grid-template-columns:1fr}.hosted-controls button{width:100%}}

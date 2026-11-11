@@ -104,6 +104,6 @@ test("dashboard includes offline report section and imports with no remote scrip
     assert.ok(html.includes('id="'+id+'"'),"missing id "+id);
   }
   assert.ok(html.indexOf("history-report.js")>html.indexOf("app.js"));
-  assert.match(html,/connect-src 'none'/);
+  assert.match(html,/connect-src 'self'/);
   assert.match(client,/sportprob:dataset-change/);
 });

@@ -205,7 +205,7 @@ function setBusy(busy){
   $("player").disabled=busy;$("stat").disabled=busy;
   document.querySelector(".range-field").disabled=busy;
 }
-async function importFile(chosen){
+async function importFile(chosen,expected=null){
   if(!chosen)return;
   const currentImport=++importSequence;
   setBusy(true);
@@ -221,12 +221,33 @@ async function importFile(chosen){
     const imported=parseGames(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
     const hash=await globalThis.SportProbIntegrity.sha256ArrayBuffer(bytes);
     if(currentImport!==importSequence)return;
+    // Hosted sources must pass the same canonical parser AND the catalog's
+    // byte fingerprint and record count before replacing the active dataset.
+    if(expected!==null){
+      if(!expected||expected.sourceKind!=="static-hosted-synthetic"||
+         typeof expected.expectedSha256!=="string"||
+         !/^[0-9a-f]{64}$/.test(expected.expectedSha256)||
+         !Number.isInteger(expected.expectedRecords)||expected.expectedRecords<5||
+         !/^[a-z][a-z0-9-]+$/.test(expected.id||""))
+        throw Error("Invalid hosted source verification contract");
+      if(!hash||hash!==expected.expectedSha256)
+        throw Error("Hosted dataset integrity mismatch");
+      if(imported.length!==expected.expectedRecords)
+        throw Error("Hosted dataset record count mismatch");
+      if(!imported.every(row=>/^DEMO[-_]/i.test(row.player)||/^SYN[-_]/i.test(row.gameId)))
+        throw Error("Hosted catalog currently permits fictional games only");
+    }
     // Do not retain prior records if the new file is invalid.
     games=imported;sourceName=chosen.name+" · source declared: "+declaredSource;
     demo=/demo/i.test(chosen.name)||games.some(x=>/^DEMO[-_]/i.test(x.player)||/^SYN[-_]/i.test(x.gameId));
     const players=[...new Set(games.map(g=>g.player))].sort();
     globalThis.SportProbDataset={
       sha256:hash,players,synthetic:demo,records:games.length,
+      provenance:expected?{
+        source_kind:"static-hosted-synthetic",
+        id:expected.id,snapshot_date:expected.snapshotDate,
+        dataset_sha256:expected.expectedSha256
+      }:null,
       // A bounded, in-memory, descriptive subset for the offline comparison view.
       comparisonHistory:games.map(g=>({player:g.player,date:g.date,points:g.points,rebounds:g.rebounds,assists:g.assists})),
       // Browser-only historical research receives the same validated rows
@@ -262,6 +283,7 @@ async function importFile(chosen){
     setBusy(false);
     render();
     announceDatasetChange();
+    return true;
   }catch(error){
     if(currentImport!==importSequence)return;
     games=[];sourceName="";demo=false;globalThis.SportProbDataset=null;setBusy(true);
@@ -285,6 +307,7 @@ async function importFile(chosen){
     row.append(cell);table.append(row);
     $("csv-file").value="";
     announceDatasetChange();
+    return false;
   }
 }
 // Both the file picker and user-entered CSV take the exact same validation path.

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="SportProb: an offline, descriptive player-performance research desk.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; connect-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; connect-src 'self'">
 <title>SportProb — Player Performance Desk</title>
 <link rel="stylesheet" href="./styles.css">
 <script src="./integrity.js" defer></script>
@@ -16,6 +16,7 @@
 <script src="./manual-report.js" defer></script>
 <script src="./instant-research.js" defer></script>
 <script src="./manual-entry.js" defer></script>
+<script src="./source-manager.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -25,18 +26,19 @@
     <a class="nav-link active" href="#overview"><span aria-hidden="true">◉</span> Player overview</a>
     <a class="nav-link" href="#history"><span aria-hidden="true">▤</span> Game history</a>
     <a class="nav-link" href="#comparison"><span aria-hidden="true">≋</span> Player comparison</a>
+    <a class="nav-link" href="#source-manager"><span aria-hidden="true">▣</span> Hosted data</a>
     <a class="nav-link" href="#manual-entry"><span aria-hidden="true">✎</span> Manual entry</a>
     <a class="nav-link" href="#instant-research"><span aria-hidden="true">▤</span> Instant stats</a>
     <a class="nav-link" href="#manual-report"><span aria-hidden="true">▣</span> Manual research</a>
     <a class="nav-link" href="#history-report"><span aria-hidden="true">▦</span> Research report</a>
     <a class="nav-link" href="#model-audit"><span aria-hidden="true">▥</span> Model audit</a>
     <a class="nav-link" href="#integrity"><span aria-hidden="true">◇</span> Data integrity</a>
-    <div class="sidebar-bottom"><span class="status-dot" aria-hidden="true"></span> LOCAL RESEARCH <p>Offline browser analytics. No account, data transfer, or live service.</p></div>
+    <div class="sidebar-bottom"><span class="status-dot" aria-hidden="true"></span> LOCAL RESEARCH <p>Local analysis, with optional same-origin public sample downloads. No account, telemetry, or personal-data upload.</p></div>
   </aside>
   <div class="workspace" id="top">
     <header class="topbar">
       <div class="breadcrumb">SPORTPROB <span>/</span> PERFORMANCE DESK <span class="topbar-version">V3 RESEARCH</span></div>
-      <div class="topbar-right"><span class="status-dot" aria-hidden="true"></span> OFFLINE MODE</div>
+      <div class="topbar-right"><span class="status-dot" aria-hidden="true"></span> LOCAL ANALYSIS</div>
     </header>
     <main>
       <section class="hero" aria-labelledby="hero-title">
@@ -70,10 +72,21 @@
       </section>
       <section class="import-panel" aria-labelledby="source-title">
         <div class="source-head"><div class="section-index">01 / SOURCE</div><div class="source-heading"><h2 id="source-title">Dataset control</h2><p>Bring a permitted player game-log CSV. It stays on this device.</p></div></div>
-        <div class="source-action"><div class="import-details"><label for="source-label">Dataset source / creator</label><input id="source-label" type="text" placeholder="e.g. My authorized game logs" maxlength="100" autocomplete="off"><label class="source-confirm"><input id="data-rights" type="checkbox"> I have permission to use this dataset for research.</label></div><label class="upload-button" for="csv-file"><span aria-hidden="true">＋</span> Import game logs</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"><p id="csv-help">Accepts player/date or player_id/game_date and points, rebounds, assists; also PTS, REB, AST header aliases. The repository includes a synthetic demo CSV. No external requests are sent.</p>
+        <div class="source-action"><div class="import-details"><label for="source-label">Dataset source / creator</label><input id="source-label" type="text" placeholder="e.g. My authorized game logs" maxlength="100" autocomplete="off"><label class="source-confirm"><input id="data-rights" type="checkbox"> I have permission to use this dataset for research.</label></div><label class="upload-button" for="csv-file"><span aria-hidden="true">＋</span> Import game logs</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help"><p id="csv-help">Accepts player/date or player_id/game_date and points, rebounds, assists; also PTS, REB, AST header aliases. The repository includes a synthetic demo CSV. Local files stay on this device; hosted-source loading retrieves public files from this same website only.</p>
           <p class="source-demo-link"><a href="./demo_games.csv" download="sportprob-synthetic-demo.csv">Download synthetic demo CSV (20 fictional games)</a> — import it above to verify the historical dashboard. This sample contains no real player information.</p></div>
         <div class="source-status" role="status" id="load-status">NO DATASET LOADED <span>Choose a local CSV to begin.</span></div>
         <p id="csv-sha256" class="source-fingerprint" role="status">No verified CSV fingerprint.</p>
+      </section>
+      <section id="source-manager" class="panel hosted-source-panel" aria-labelledby="hosted-source-title">
+        <div class="panel-heading"><div><div class="panel-kicker">01 / HOSTED RESEARCH SOURCE</div><h2 id="hosted-source-title">Data Source Manager<span class="accent">.</span></h2></div><span class="quality-badge">READ-ONLY STATIC DATA</span></div>
+        <p class="audit-explainer">Choose a reviewed, public, historical snapshot hosted with this website. The source is checked against its SHA-256 checksum and record count before using the same validated local analysis engine. The first available source is fictional test data, not NBA statistics.</p>
+        <div class="hosted-controls">
+          <div class="hosted-selector"><label for="hosted-source-select">Published research dataset</label><select id="hosted-source-select" disabled><option value="">Discovering public catalog…</option></select></div>
+          <button id="hosted-load" type="button" class="upload-button" disabled>Load hosted history</button>
+        </div>
+        <p id="hosted-source-details" class="report-provenance">No hosted dataset selected. No automatic third-party statistics feed is connected.</p>
+        <p id="hosted-source-status" class="audit-status" role="status">Checking same-origin research catalog…</p>
+        <p class="context-note">Before loading, confirm research permission in Dataset control above. This website serves static snapshots; it does not store uploaded data, fetch new NBA games, or retain a personal library. Public data needs independently reviewed redistribution rights before it can be added to the catalog.</p>
       </section>
       <section id="overview" class="overview" aria-labelledby="overview-title">
         <div class="section-heading"><div><div class="section-index">02 / PLAYER ANALYSIS</div><h2 id="overview-title">Performance overview<span class="accent">.</span></h2></div><div id="quality-badge" class="quality-badge">AWAITING SOURCE</div></div>

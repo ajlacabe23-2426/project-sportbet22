@@ -75,7 +75,7 @@ test("dashboard script has no network or HTML injection APIs and is wired into m
   assert.doesNotMatch(source,/\bfetch\s*\(|XMLHttpRequest|innerHTML|localStorage|sessionStorage/);
   const html=fs.readFileSync(path.join(root,"mobile/index.html"),"utf8");
   assert.match(html,/src="\.\/instant-research\.js"/);
-  assert.match(html,/connect-src 'none'/);
+  assert.match(html,/connect-src 'self'/);
   for(const id of ["instant-research","instant-through","instant-window",
     "instant-status","instant-results","instant-rows","instant-provenance"])
     assert.ok(html.includes('id="'+id+'"'),"missing "+id);
