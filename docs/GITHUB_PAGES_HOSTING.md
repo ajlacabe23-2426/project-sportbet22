@@ -36,6 +36,10 @@ The same script can be run without hosting as `node tests/hosted-pages-smoke.cjs
 
 This deliberately does not embed unlicensed real player data or use external requests to retrieve statistics. The demo file is a downloadable static asset, not an automatically fetched data source.
 
+## Public hosted synthetic snapshots
+
+The site now serves `datasets/catalog.json` and the authored synthetic `demo_games.csv` as public static assets. The **Data Source Manager** loads those files from the same host and rejects catalog checksum or row-count mismatches. The publishing workflow validates catalog structure, dataset SHA-256, HTTP availability, and existing browser import behavior. Static files cannot receive uploads or self-update. For detailed source governance, read [HOSTED_SOURCE_MANAGER.md](HOSTED_SOURCE_MANAGER.md).
+
 ## Live hosting acceptance checklist
 
 - Pages workflow is successful with a real `page_url` in the deployment job.
