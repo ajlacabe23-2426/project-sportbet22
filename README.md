@@ -4,6 +4,12 @@ A **simulation-only sports statistics research platform**. SportProb estimates p
 
 **Research only:** No live betting, sportsbook data ingestion, odds comparison, wager recommendations, or bankroll calculations. All bundled observations are explicitly **synthetic**, not real player data.
 
+## Hosted research-data catalog (static, read-only)
+
+The GitHub Pages Performance Desk now includes a **Data Source Manager** for reviewed public historical CSV snapshots hosted on the **same site**. The initial catalog intentionally contains only 20 fictional example games, with a SHA-256 checksum, record count, source attribution, and source snapshot date. Select **Load hosted history** after confirming Dataset control research permissions; the app validates the CSV before displaying descriptive histories. Local CSV uploads and manual entry remain available. This is **not** an automatic NBA data feed or server-side database; no unreviewed real-world sports data is included.
+
+See [Hosted Source Manager security, source review, and publishing details](docs/HOSTED_SOURCE_MANAGER.md).
+
 ## Hosted dashboard verification
 
 The Pages workflow now includes a post-deployment HTTP smoke test to check that the real site and its required JavaScript/CSS files load, and that only an authored synthetic demonstration CSV is publicly available. The frontend also provides an on-page **Download synthetic demo CSV** link to help verify the import and Instant stats workflow on a phone. These checks do not independently verify the real-world accuracy or licensing of imported user datasets.
