@@ -162,13 +162,17 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       "/mobile/manual-report.js",
       "/mobile/instant-research.js",
       "/mobile/manual-entry.js",
+      "/mobile/source-manager.js","/mobile/datasets/catalog.json",
+      "/mobile/demo_games.csv",
       "/mobile/player-comparison.js"
     ]);
     const server=createServer(async(req,res)=>{
       const url=new URL(req.url,"http://localhost"),location=url.pathname;
       if(!allowed.has(location)){res.writeHead(404);res.end();return;}
       const mime=location.endsWith(".js")?"text/javascript":
-        location.endsWith(".css")?"text/css":"text/html";
+        location.endsWith(".css")?"text/css":
+        location.endsWith(".json")?"application/json":
+        location.endsWith(".csv")?"text/csv":"text/html";
       try{
         const bytes=await readFile(path.join(root,location.slice(1)));
         res.writeHead(200,{"Content-Type":mime,"Cache-Control":"no-store"});
@@ -219,7 +223,14 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
         assert.ok(nodeId,"file input exists: "+selector);
         await conn.send("DOM.setFileInputFiles",{nodeId,files:[file]});
       }
-      await js("(()=>{document.getElementById('source-label').value='Bundled synthetic demo';document.getElementById('data-rights').checked=true;return true;})()");
+      await eventually(()=>js("!document.getElementById('hosted-source-select').disabled"),"approved public source catalog loads");
+      assert.equal(await js("document.getElementById('hosted-source-select').value"),"synthetic-player-history-v1");
+      await js("(()=>{document.getElementById('source-label').value='Bundled synthetic demo';document.getElementById('data-rights').checked=true;document.getElementById('hosted-load').click();return true;})()");
+      await eventually(()=>js("document.getElementById('hosted-source-status').textContent.includes('HOSTED SYNTHETIC SNAPSHOT LOADED')"),"hosted public synthetic source imported through local validator");
+      assert.equal(await js("globalThis.SportProbDataset?.records"),20);
+      assert.equal(await js("globalThis.SportProbDataset?.provenance?.id"),"synthetic-player-history-v1");
+      assert.equal(await js("globalThis.SportProbDataset?.sha256"),manifest.sha256);
+      assert.equal(await js("document.getElementById('instant-rows').children.length"),3);
       await attach("#csv-file",original);
       await eventually(()=>js("document.getElementById('load-status').textContent.includes('SYNTHETIC SAMPLE LOADED')"),"synthetic historical CSV load");
       assert.equal(await js("document.getElementById('csv-sha256').textContent.includes('"+manifest.sha256+"')"),true);
