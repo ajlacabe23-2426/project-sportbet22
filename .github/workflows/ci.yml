@@ -111,7 +111,7 @@ jobs:
         with:
           node-version: "22"
       - name: Offline mobile application and CSV parser checks
-        run: node --test tests/mobile-ui.test.cjs tests/history-report-ui.test.cjs tests/player-comparison.test.cjs tests/manual-report-ui.test.cjs tests/instant-research.test.cjs tests/manual-entry.test.cjs
+        run: node --test tests/mobile-ui.test.cjs tests/history-report-ui.test.cjs tests/player-comparison.test.cjs tests/manual-report-ui.test.cjs tests/instant-research.test.cjs tests/manual-entry.test.cjs tests/hosted-source-manager.test.cjs
       - name: Check complete static site and synthetic browser fixture
         run: node tests/hosted-pages-smoke.cjs --local-only
       - name: Test actual offline CSV/audit import in headless Chromium
