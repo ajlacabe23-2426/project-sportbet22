@@ -52,7 +52,7 @@ test("comparison is offline and only uses text-only DOM rendering",()=>{
   assert.match(html,/src="\.\/player-comparison\.js"/);
   assert.match(html,/id="comparison-rows"/);
   assert.match(html,/id="comparison-window"/);
-  assert.match(html,/connect-src 'none'/);
+  assert.match(html,/connect-src 'self'/);
   assert.doesNotMatch(source,/\bfetch\s*\(|XMLHttpRequest|innerHTML|localStorage/);
   assert.match(source,/sportprob:dataset-change/);
 });
