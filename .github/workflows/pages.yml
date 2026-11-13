@@ -43,6 +43,13 @@ jobs:
           tests/manual-entry.test.cjs tests/hosted-source-manager.test.cjs
       - name: Check static assets and synthetic demo fixture
         run: node tests/hosted-pages-smoke.cjs --local-only
+      - name: Run real Chromium import acceptance before deploying
+        env:
+          RUN_BROWSER_ACCEPTANCE: "1"
+          CHROME_BIN: /usr/bin/google-chrome
+        run: |
+          command -v "$CHROME_BIN"
+          node --test tests/mobile-browser.test.cjs
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload only static research dashboard assets
