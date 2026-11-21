@@ -22,7 +22,10 @@ test("coverage counts only completed observations through explicit cutoff",()=>{
   assert.equal(result.missingMinutes,1);
   const p=result.players.find(x=>x.player==="DEMO-A");
   assert.equal(p.observedGames,3);
-  assert.equal(p.playedGames,2);
+  assert.equal(p.playedGames,1);
+  assert.equal(p.unknownParticipationGames,1);
+  assert.equal(result.knownPlayedGames,2);
+  assert.equal(result.unknownParticipationGames,1);
   assert.equal(p.zeroMinuteGames,1);
   assert.equal(p.status,"SMALL_HISTORICAL_SAMPLE");
   assert.equal(result.forecastReady,false);
@@ -48,4 +51,30 @@ test("static UI wireup has no external API or persistent storage",()=>{
   assert.match(html,/id="coverage-note"/);
   assert.doesNotMatch(source,/\bfetch\s*\(|localStorage|sessionStorage|innerHTML|XMLHttpRequest/);
   assert.match(source,/sportprob:dataset-change/);
+});
+
+test("missing minutes cannot inflate confirmed participation or sample readiness",()=>{
+  const rows=[
+    ...Array.from({length:4},(_,i)=>({player:"DEMO",date:"2026-02-"+String(i+1).padStart(2,"0"),minutes:25})),
+    ...Array.from({length:5},(_,i)=>({player:"DEMO",date:"2026-02-"+String(i+5).padStart(2,"0"),minutes:null})),
+    {player:"DEMO",date:"2026-02-10",minutes:0},
+  ];
+  const audit=getModule().auditHistoricalCoverage;
+  const result=audit(rows,"2026-02-10");
+  assert.equal(result.observedGames,10);
+  assert.equal(result.knownPlayedGames,4);
+  assert.equal(result.unknownParticipationGames,5);
+  assert.equal(result.players[0].zeroMinuteGames,1);
+  assert.equal(result.players[0].playedGames,4);
+  assert.equal(result.players[0].status,"SMALL_HISTORICAL_SAMPLE");
+
+  // Only a fifth confirmed appearance, not a missing-minute row, lifts the small-sample flag.
+  rows.push({player:"DEMO",date:"2026-02-11",minutes:30});
+  const beforeCutoff=audit(rows,"2026-02-10");
+  assert.equal(beforeCutoff.knownPlayedGames,4);
+  assert.equal(beforeCutoff.excludedAfterCutoff,1);
+  const afterCutoff=audit(rows,"2026-02-11");
+  assert.equal(afterCutoff.knownPlayedGames,5);
+  assert.equal(afterCutoff.players[0].status,"DESCRIPTIVE_ONLY_UNVERIFIED");
+  assert.equal(afterCutoff.forecastReady,false);
 });
