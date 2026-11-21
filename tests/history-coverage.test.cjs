@@ -78,3 +78,30 @@ test("missing minutes cannot inflate confirmed participation or sample readiness
   assert.equal(afterCutoff.players[0].status,"DESCRIPTIVE_ONLY_UNVERIFIED");
   assert.equal(afterCutoff.forecastReady,false);
 });
+
+test("duplicate or ambiguous records never inflate descriptive game coverage",()=>{
+  const audit=getModule().auditHistoricalCoverage;
+  const observed={player:"DEMO",date:"2026-02-02",minutes:30,gameId:"G-01"};
+  assert.throws(()=>audit([observed,{...observed,minutes:24}],"2026-02-02"),
+    /Duplicate or ambiguous player\/game identity/);
+  assert.throws(()=>audit([observed,{...observed,date:"2026-02-03"}],"2026-02-03"),
+    /Duplicate or ambiguous player\/game identity/);
+  assert.throws(()=>audit([{...observed,gameId:""},{...observed,gameId:"G-02"}],"2026-02-02"),
+    /Duplicate or ambiguous player\/game identity/);
+  assert.throws(()=>audit([{...observed,gameId:"G-02"},{...observed,gameId:""}],"2026-02-02"),
+    /Duplicate or ambiguous player\/game identity/);
+});
+
+test("two distinct same-day game IDs stay separate and cutoffs do not hide duplicates",()=>{
+  const audit=getModule().auditHistoricalCoverage;
+  const a={player:"DEMO",date:"2026-02-02",minutes:30,gameId:"GAME-A"};
+  const b={player:"DEMO",date:"2026-02-02",minutes:26,gameId:"GAME-B"};
+  const report=audit([a,b],"2026-02-02");
+  assert.equal(report.players[0].observedGames,2);
+  assert.equal(report.knownPlayedGames,2);
+  assert.equal(report.sourceAuthenticityVerified,false);
+  assert.equal(report.forecastReady,false);
+
+  const later={...a,date:"2026-02-03"};
+  assert.throws(()=>audit([a,later],"2026-02-02"),/Duplicate or ambiguous/);
+});
