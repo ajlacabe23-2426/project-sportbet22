@@ -164,7 +164,7 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       "/mobile/manual-entry.js",
       "/mobile/source-manager.js","/mobile/datasets/catalog.json",
       "/mobile/demo_games.csv",
-      "/mobile/player-comparison.js"
+      "/mobile/player-comparison.js","/mobile/history-coverage.js"
     ]);
     const server=createServer(async(req,res)=>{
       const url=new URL(req.url,"http://localhost"),location=url.pathname;
@@ -237,6 +237,14 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       await eventually(()=>js("document.getElementById('instant-results').hidden===false"),"phone research completes from CSV without Python");
       assert.equal(await js("document.getElementById('instant-rows').children.length"),3);
       assert.equal(await js("document.getElementById('instant-through').value"),"2025-11-20");
+      await eventually(()=>js("document.querySelectorAll('#coverage-rows tr').length===1"),"historical coverage renders in Chromium");
+      assert.equal(await js("document.getElementById('coverage-through').value"),"2025-11-20");
+      assert.equal(await js("document.getElementById('coverage-rows').children[0].cells[1].textContent"),"20 / 20");
+      await js("(()=>{const el=document.getElementById('coverage-through');el.value='2025-11-04';el.dispatchEvent(new Event('change'));return true;})()");
+      assert.equal(await js("document.getElementById('coverage-rows').children[0].cells[1].textContent"),"4 / 4");
+      assert.equal(await js("document.getElementById('coverage-note').textContent.includes('16 future-to-cutoff rows excluded')"),true);
+      await js("(()=>{const el=document.getElementById('coverage-through');el.value='2025-11-20';el.dispatchEvent(new Event('change'));return true;})()");
+      assert.equal(await js("document.getElementById('coverage-rows').children[0].cells[1].textContent"),"20 / 20");
       await js("(()=>{const el=document.getElementById('instant-through');el.value='2025-11-04';el.dispatchEvent(new Event('change'));return true;})()");
       assert.equal(await js("document.getElementById('instant-results').hidden"),true);
       assert.equal(await js("document.getElementById('instant-status').textContent.includes('Insufficient history')"),true);
@@ -292,6 +300,8 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       await eventually(()=>js("document.getElementById('load-status').textContent.includes('IMPORT REJECTED')"),"invalid replacement CSV rejection");
       assert.equal(await js("document.getElementById('instant-results').hidden"),true);
       assert.equal(await js("document.getElementById('instant-through').disabled"),true);
+      assert.equal(await js("document.getElementById('coverage-through').disabled"),true);
+      assert.equal(await js("document.querySelectorAll('#coverage-rows tr').length"),0);
 
       // Enter five completed-game observations on phone UI, without uploading
       // a CSV file or calling the Python manual-report generator.

@@ -11,6 +11,7 @@
 <script src="./integrity.js" defer></script>
 <script src="./app.js" defer></script>
 <script src="./player-comparison.js" defer></script>
+<script src="./history-coverage.js" defer></script>
 <script src="./audit.js" defer></script>
 <script src="./history-report.js" defer></script>
 <script src="./manual-report.js" defer></script>
@@ -26,6 +27,7 @@
     <a class="nav-link active" href="#overview"><span aria-hidden="true">◉</span> Player overview</a>
     <a class="nav-link" href="#history"><span aria-hidden="true">▤</span> Game history</a>
     <a class="nav-link" href="#comparison"><span aria-hidden="true">≋</span> Player comparison</a>
+    <a class="nav-link" href="#coverage"><span aria-hidden="true">▤</span> Source coverage</a>
     <a class="nav-link" href="#source-manager"><span aria-hidden="true">▣</span> Hosted data</a>
     <a class="nav-link" href="#manual-entry"><span aria-hidden="true">✎</span> Manual entry</a>
     <a class="nav-link" href="#instant-research"><span aria-hidden="true">▤</span> Instant stats</a>
@@ -128,6 +130,16 @@
         <div class="table-scroll"><table><thead><tr><th>Player</th><th>Games / available</th><th>Latest game</th><th>PTS avg</th><th>REB avg</th><th>AST avg</th></tr></thead>
           <tbody id="comparison-rows"><tr><td colspan="6" class="table-empty">Import game logs to compare players.</td></tr></tbody></table></div>
         <p id="comparison-note" class="context-note" role="status">Import completed game histories to compare observed player averages.</p>
+      </section>
+      <section id="coverage" class="panel history-report-panel" aria-labelledby="coverage-title">
+        <div class="panel-heading"><div><div class="panel-kicker">04 / HISTORICAL DATA COMPLETENESS</div><h2 id="coverage-title">Source coverage<span class="accent">.</span></h2></div><span class="quality-badge">DESCRIPTIVE ONLY</span></div>
+        <p class="audit-explainer">Review how many completed game-log records exist, which historical dates are represented, and whether minutes are missing. This panel checks local coverage only; it does not validate source accuracy or predict outcomes.</p>
+        <div class="instant-controls">
+          <div><label for="coverage-through">Include completed games through</label><input id="coverage-through" type="date" disabled aria-describedby="coverage-note"></div>
+        </div>
+        <p id="coverage-note" class="audit-status" role="status">Import completed game logs to inspect historical coverage.</p>
+        <div class="table-scroll"><table><thead><tr><th>Player</th><th>Confirmed / rows</th><th>First observed</th><th>Last observed</th><th>Minutes missing</th><th>Source check</th></tr></thead><tbody id="coverage-rows"></tbody></table></div>
+        <p class="context-note">A confirmed appearance requires recorded minutes above zero. Missing minutes leave participation unconfirmed. Sample flags describe only the supplied history; they are not performance forecasts or proof that a source is genuine. No gambling or wagering information is used.</p>
       </section>
       <section id="instant-research" class="panel history-report-panel" aria-labelledby="instant-research-title">
         <div class="panel-heading"><div><div class="panel-kicker">04 / INSTANT LOCAL RESEARCH</div><h2 id="instant-research-title">Research on your phone<span class="accent">.</span></h2></div><span class="quality-badge">NO PYTHON NEEDED</span></div>
