@@ -10,12 +10,30 @@
     if(!Array.isArray(records)||records.length>20000||!validDate(through))
       throw Error("Invalid historical coverage input");
     const groups=new Map();
+    // Match the CSV parser's game identity invariants even if this helper is
+    // called by another browser module with untrusted direct records.
+    const seenGames=new Set(),seenDates=new Set(),seenDatesWithoutId=new Set();
     let excludedAfterCutoff=0;
     for(const row of records){
-      if(!row||typeof row.player!=="string"||!row.player.trim()||row.player.length>110||
+      if(!row||typeof row.player!=="string"||!row.player.trim()||
+         row.player!==row.player.trim()||row.player.length>110||
          !validDate(row.date)||!(row.minutes===null||
-          typeof row.minutes==="number"&&Number.isFinite(row.minutes)&&row.minutes>=0&&row.minutes<=80))
+          typeof row.minutes==="number"&&Number.isFinite(row.minutes)&&row.minutes>=0&&row.minutes<=80)||
+         !(row.gameId===undefined||typeof row.gameId==="string"&&row.gameId.length<=120))
         throw Error("Invalid source observation");
+      const gameId=row.gameId||"";
+      const dateIdentity=JSON.stringify([row.player,row.date]);
+      if(gameId){
+        const stableIdentity=JSON.stringify([row.player,gameId]);
+        if(seenGames.has(stableIdentity)||seenDatesWithoutId.has(dateIdentity))
+          throw Error("Duplicate or ambiguous player/game identity");
+        seenGames.add(stableIdentity);
+      }else{
+        if(seenDates.has(dateIdentity))
+          throw Error("Duplicate or ambiguous player/game identity");
+        seenDatesWithoutId.add(dateIdentity);
+      }
+      seenDates.add(dateIdentity);
       if(row.date>through){excludedAfterCutoff++;continue;}
       const list=groups.get(row.player)||[];
       list.push(row);
