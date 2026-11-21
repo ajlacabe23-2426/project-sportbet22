@@ -15,4 +15,6 @@ A small or incomplete sample should not look like a validated sports research da
 5. Import invalid CSV data through Dataset control: the parser rejects it and coverage clears.
 6. Test source code with `node --test tests/history-coverage.test.cjs`.
 
-The panel cannot verify the external source's rights, game accuracy, season coverage, player identification, or whether a missing game represents a true absence. At least five played games merely removes the **small sample** label; it does **not** validate a model, permit forecasting, or establish suitability for decisions. No connection to live NBA data or sports wagering is introduced.
+The panel treats records with unknown minutes as **unconfirmed participation**, rather than confirmed games played. Zero-minute records also do not count as appearances. The displayed confirmed-appearances count uses only rows with positive, finite minutes; a player needs at least five **confirmed** appearances to clear the small-sample flag. Historical cutoff changes recompute all counts without using later records.
+
+The panel cannot verify the external source's rights, game accuracy, season coverage, player identification, or whether a missing game represents a true absence. Clearing the **small confirmed sample** label does **not** validate a model, permit forecasting, or establish suitability for decisions. No connection to live NBA data or sports wagering is introduced.
