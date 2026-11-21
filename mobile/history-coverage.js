@@ -25,11 +25,12 @@
       const ordered=[...items].sort((a,b)=>a.date.localeCompare(b.date));
       const missingMinutes=ordered.filter(x=>x.minutes===null).length;
       const zeroMinute=ordered.filter(x=>x.minutes===0).length;
-      const played=ordered.length-zeroMinute;
+      // Unknown minutes do not establish that the player appeared in a game.
+      const played=ordered.length-zeroMinute-missingMinutes;
       return {
         player,observedGames:ordered.length,playedGames:played,
         firstGame:ordered[0].date,lastGame:ordered.at(-1).date,
-        missingMinutes,zeroMinuteGames:zeroMinute,
+        missingMinutes,unknownParticipationGames:missingMinutes,zeroMinuteGames:zeroMinute,
         status:played<5?"SMALL_HISTORICAL_SAMPLE":"DESCRIPTIVE_ONLY_UNVERIFIED",
       };
     }).sort((a,b)=>a.player.localeCompare(b.player));
@@ -39,6 +40,8 @@
       observedGames:players.reduce((total,p)=>total+p.observedGames,0),
       excludedAfterCutoff,playerCount:players.length,
       missingMinutes:players.reduce((total,p)=>total+p.missingMinutes,0),
+      knownPlayedGames:players.reduce((total,p)=>total+p.playedGames,0),
+      unknownParticipationGames:players.reduce((total,p)=>total+p.unknownParticipationGames,0),
       players,
       sourceAuthenticityVerified:false,forecastReady:false,
     };
@@ -67,7 +70,7 @@
         const tr=document.createElement("tr");
         for(const value of [player.player,player.playedGames+" / "+player.observedGames,
           player.firstGame,player.lastGame,String(player.missingMinutes),
-          player.status==="SMALL_HISTORICAL_SAMPLE"?"Small sample":"Descriptive only"]){
+          player.status==="SMALL_HISTORICAL_SAMPLE"?"Small confirmed sample":"Descriptive only"]){
           const td=document.createElement("td");td.textContent=value;tr.append(td);
         }
         body.append(tr);
@@ -75,7 +78,8 @@
       note.textContent=report.observedGames+" historical records through "+report.throughInclusive+
         " across "+report.playerCount+" player(s); "+report.excludedAfterCutoff+
         " future-to-cutoff rows excluded; "+report.missingMinutes+
-        " missing minute values. "+(report.players.length>100?"Showing first 100 players. ":"")+
+        " missing minute values (participation unconfirmed); "+report.knownPlayedGames+
+        " confirmed appearances. "+(report.players.length>100?"Showing first 100 players. ":"")+
         "Origin rights, completeness and source accuracy are not independently verified. No forecasts.";
     }catch(error){
       body.replaceChildren();
