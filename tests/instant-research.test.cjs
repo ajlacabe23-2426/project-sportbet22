@@ -83,3 +83,24 @@ test("dashboard script has no network or HTML injection APIs and is wired into m
   const app=fs.readFileSync(path.join(root,"mobile/app.js"),"utf8");
   assert.match(app,/directResearchHistory:games\.map/);
 });
+
+test("independent historical calculation rejects duplicate and ambiguous game identities",()=>{
+  const {summarizeCompletedGames}=moduleUnderTest();
+  const valid=Array.from({length:5},(_,i)=>row("SYN-A","2026-01-0"+(i+1),10+i,5,2,30,"ID-"+i));
+  const repeatedId={...valid[0],date:"2026-01-10"};
+  assert.throws(()=>summarizeCompletedGames([...valid,repeatedId],"SYN-A","2026-01-05","5"),/Duplicate or ambiguous/);
+  const missingId={...valid[0],gameId:""};
+  assert.throws(()=>summarizeCompletedGames([...valid,missingId],"SYN-A","2026-01-05","5"),/Duplicate or ambiguous/);
+  const sameDate={...valid[0],gameId:"DIFFERENT"};
+  assert.doesNotThrow(()=>summarizeCompletedGames([...valid,sameDate],"SYN-A","2026-01-05","all"));
+});
+test("descriptive summaries expose missing-minute counts without inventing participation",()=>{
+  const {summarizeCompletedGames}=moduleUnderTest();
+  const rows=Array.from({length:5},(_,i)=>row("SYN-A","2026-02-0"+(i+1),12,2,3,i===0?null:35));
+  const result=summarizeCompletedGames(rows,"SYN-A","2026-02-05","all");
+  assert.equal(result.used_games,5);
+  assert.equal(result.confirmed_minute_observations,4);
+  assert.equal(result.missing_minutes,1);
+  assert.equal(result.statistics.points.production_per_36_minutes,null);
+  assert.equal(result.statistics.points.sample_standard_deviation,0);
+});
