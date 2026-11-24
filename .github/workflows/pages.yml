@@ -48,10 +48,15 @@ jobs:
       - name: Upload only static research dashboard assets
         uses: actions/upload-pages-artifact@v3
         with:
+          # GitHub Actions re-runs preserve previous attempt artifacts; use a
+          # per-attempt name to prevent ambiguous Pages artifact lookups.
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: mobile
       - name: Deploy verified static artifact
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Verify deployed page and all local assets
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
