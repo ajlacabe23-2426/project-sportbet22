@@ -24,7 +24,7 @@ A GitHub Pages workflow in `.github/workflows/pages.yml` can serve the browser-o
 
 ## Manual completed-game entry (phone-first)
 
-The Performance Desk now supports entering completed-game observations individually in the **Enter game logs** panel. Add player/date/minutes/points/rebounds/assists records, declare the source and research permissions in Dataset control, then use **Analyze draft** to run the exact same validated CSV import path. **Export CSV** preserves the draft to a file; no browser storage, account, or network transfer is involved. Closing or reloading the page clears unexported entries.
+The Performance Desk now supports entering completed-game observations individually in the **Enter game logs** panel. Add player/date/minutes/points/rebounds/assists records, declare the source and research permissions in Dataset control, then use **Analyze draft** to run the exact same validated CSV import path. **Save on this device** optionally preserves a checksum-verified manual draft in browser-local IndexedDB; **Restore saved draft** revalidates it, and **Delete saved draft** removes that local copy. Saving is never automatic and does not require an account or upload records to a server. **Export CSV** provides a separate backup. Browser storage can be cleared, so on-device saving is not guaranteed long-term retention.
 
 This is descriptive educational sports research. It does not use bookmaker odds or provide wagering tools. [Step-by-step phone manual entry instructions](docs/MANUAL_GAME_ENTRY.md).
 
