@@ -1,6 +1,6 @@
 "use strict";
-// In-memory manual entry of completed games. No network, persistent storage,
-// sportsbook information, or future-game forecasts.
+// Completed-game manual entry. Draft persistence is explicit, optional and
+// confined to IndexedDB on this device; no network or wagering features.
 (function(root){
   const $=id=>document.getElementById(id);
   const HEADERS=["game_id","player_id","game_date","opponent","home","minutes","points","rebounds","assists"];
@@ -84,6 +84,7 @@
     $("entry-count").textContent=draft.length+" completed game"+(draft.length===1?"":"s")+" in this device-only draft.";
     $("entry-analyze").disabled=!draft.length;
     $("entry-export").disabled=!draft.length;
+    $("entry-save").disabled=!draft.length;
   }
   function readForm(){
     const form=$("entry-form");
@@ -126,6 +127,39 @@
         :"Draft was not accepted by the dataset importer; review Dataset control.");
     }catch(error){status("ANALYSIS UNAVAILABLE · "+error.message)}
   }
+  async function saveDraft(){
+    try{
+      const store=root.SportProbDraftStore;
+      if(!store)throw Error("On-device draft store is unavailable");
+      // Integrity includes canonical CSV validation and duplicate rejection.
+      const envelope=await store.sealDraft(draft,buildManualCsv);
+      await store.saveSnapshot(envelope);
+      status("SAVED ON THIS DEVICE · "+envelope.rowCount+
+        " validated entries · SHA-256 "+envelope.sha256.slice(0,12)+
+        "…. Export CSV as a separate backup; browser storage can be cleared.");
+    }catch(error){status("SAVE REJECTED · "+error.message)}
+  }
+  async function restoreDraft(){
+    try{
+      const store=root.SportProbDraftStore;
+      if(!store)throw Error("On-device draft store is unavailable");
+      const envelope=await store.loadSnapshot();
+      if(!envelope)throw Error("No saved draft exists in this browser");
+      const checked=await store.openDraft(envelope,buildManualCsv);
+      // Commit to the UI only when the complete snapshot passes verification.
+      draft=checked;render();
+      status("RESTORED VERIFIED DRAFT · "+draft.length+
+        " entries. This does not replace the currently imported dataset.");
+    }catch(error){status("RESTORE REJECTED · "+error.message)}
+  }
+  async function deleteSavedDraft(){
+    try{
+      const store=root.SportProbDraftStore;
+      if(!store)throw Error("On-device draft store is unavailable");
+      await store.deleteSnapshot();
+      status("Saved on-device draft deleted. In-memory entries and exported CSVs remain unchanged.");
+    }catch(error){status("DELETE UNAVAILABLE · "+error.message)}
+  }
   function exportCsv(){
     try{
       const csv=buildManualCsv(draft);
@@ -142,6 +176,9 @@
     $("entry-form").addEventListener("submit",add);
     $("entry-analyze").addEventListener("click",analyze);
     $("entry-export").addEventListener("click",exportCsv);
+    $("entry-save").addEventListener("click",saveDraft);
+    $("entry-restore").addEventListener("click",restoreDraft);
+    $("entry-delete-saved").addEventListener("click",deleteSavedDraft);
     $("entry-rows").addEventListener("click",event=>{
       const i=event.target?.dataset?.remove;
       if(i===undefined)return;

@@ -161,7 +161,7 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       "/mobile/integrity.js","/mobile/audit.js","/mobile/history-report.js",
       "/mobile/manual-report.js",
       "/mobile/instant-research.js",
-      "/mobile/manual-entry.js",
+      "/mobile/manual-entry.js","/mobile/draft-store.js",
       "/mobile/source-manager.js","/mobile/datasets/catalog.json",
       "/mobile/demo_games.csv",
       "/mobile/player-comparison.js","/mobile/history-coverage.js"
@@ -307,13 +307,30 @@ test("headless Chrome imports CSV and audit, then detects edited source bytes",
       // a CSV file or calling the Python manual-report generator.
       const rowsAdded=await js("(()=>{const f=document.getElementById('entry-form');for(let i=1;i<=5;i++){const v={game_id:'',player_id:'Manual Player',game_date:'2025-12-0'+i,opponent:'Example',home:'true',minutes:'30',points:'20',rebounds:'5',assists:'4'};for(const [k,val] of Object.entries(v))f.elements.namedItem(k).value=val;f.requestSubmit();}return document.getElementById('entry-rows').children.length;})()");
       assert.equal(rowsAdded,5,"all five manually entered records are validated");
+      // Exact browser check: opt-in IndexedDB save, clear, checksum-verified
+      // restore; never load a saved draft into the analysis dataset implicitly.
+      await js("document.getElementById('entry-save').click()");
+      await eventually(()=>js("document.getElementById('entry-status').textContent.includes('SAVED ON THIS DEVICE')"),"optional device persistence save");
+      await js("document.getElementById('entry-clear').click()");
+      assert.equal(await js("document.getElementById('entry-rows').children.length"),0);
+      await js("document.getElementById('entry-restore').click()");
+      await eventually(()=>js("document.getElementById('entry-status').textContent.includes('RESTORED VERIFIED DRAFT')"),"checksum-verified device restore");
+      assert.equal(await js("document.getElementById('entry-rows').children.length"),5);
       await js("document.getElementById('entry-analyze').click()");
       await eventually(()=>js("document.getElementById('load-status').textContent.includes('LOCAL DATASET LOADED')"),"manual draft passed through shared importer");
       assert.equal(await js("document.getElementById('instant-results').hidden"),false);
       assert.equal(await js("document.getElementById('player').value"),"Manual Player");
       assert.equal(await js("document.getElementById('instant-rows').children.length"),3);
       assert.equal(await js("document.getElementById('entry-status').textContent.includes('Draft analyzed')"),true);
-      // Closing the page would discard the draft unless its CSV is exported.
+      // Corrupt stored content must not replace an in-memory draft.
+      await js("(async()=>{const store=globalThis.SportProbDraftStore;const data=await store.loadSnapshot();data.rows[0].points='199';await store.saveSnapshot(data);document.getElementById('entry-clear').click();document.getElementById('entry-restore').click();})()");
+      await eventually(()=>js("document.getElementById('entry-status').textContent.includes('RESTORE REJECTED')"),"corrupted draft rejected");
+      assert.equal(await js("document.getElementById('entry-rows').children.length"),0);
+      await js("document.getElementById('entry-delete-saved').click()");
+      await eventually(()=>js("document.getElementById('entry-status').textContent.includes('Saved on-device draft deleted')"),"explicit draft deletion");
+      assert.equal(await js("globalThis.SportProbDraftStore.loadSnapshot().then(x=>!x)"),true);
+      // In-memory drafts are ephemeral unless saved or exported; browser storage
+      // is explicitly opt-in and can be evicted by the device.
       assert.deepEqual(conn.exceptions,[],"browser produces no unhandled script exceptions");
     }finally{
       conn?.close();
