@@ -13,8 +13,15 @@
   const average=nums=>nums.reduce((total,value)=>total+value,0)/nums.length;
   function sampleSD(nums){
     if(nums.length<2)return null;
-    const avg=average(nums);
-    return Math.sqrt(nums.reduce((sum,value)=>sum+(value-avg)**2,0)/(nums.length-1));
+    // Welford's algorithm is numerically stable even for nearly equal samples.
+    let count=0,mean=0,m2=0;
+    for(const value of nums){
+      count++;
+      const delta=value-mean;
+      mean+=delta/count;
+      m2+=delta*(value-mean);
+    }
+    return Math.sqrt(Math.max(0,m2/(count-1)));
   }
   function median(nums){
     const ordered=[...nums].sort((a,b)=>a-b),middle=Math.floor(ordered.length/2);
@@ -28,12 +35,28 @@
     if(!Array.isArray(records)||records.length>20000||typeof player!=="string"||
        !player.trim()||!dateOK(through)||!WINDOWS.has(String(window)))
       throw Error("Invalid input to completed-game research");
+    const seenGameIds=new Set(),seenDates=new Set(),seenWithoutIds=new Set();
     for(const row of records){
-      if(!row||typeof row.player!=="string"||!row.player||
+      if(!row||typeof row.player!=="string"||!row.player.trim()||
+         row.player!==row.player.trim()||row.player.length>110||
          !dateOK(row.date)||!STATS.every(k=>Number.isSafeInteger(row[k])&&row[k]>=0&&row[k]<=200)||
          !(row.minutes===null||typeof row.minutes==="number"&&Number.isFinite(row.minutes)&&row.minutes>=0&&row.minutes<=80)||
-         (row.minutes===0&&STATS.some(k=>row[k]>0)))
+         (row.minutes===0&&STATS.some(k=>row[k]>0))||
+         !(row.gameId===undefined||typeof row.gameId==="string"&&row.gameId.length<=120))
         throw Error("Invalid completed-game record");
+      // Independently enforce the CSV importer's identity rules. Repeated
+      // same-date games require distinct, stable game IDs in every row.
+      const id=row.gameId||"",day=JSON.stringify([row.player,row.date]);
+      if(id){
+        const game=JSON.stringify([row.player,id]);
+        if(seenGameIds.has(game)||seenWithoutIds.has(day))
+          throw Error("Duplicate or ambiguous completed-game identity");
+        seenGameIds.add(game);
+      }else{
+        if(seenDates.has(day))throw Error("Duplicate or ambiguous completed-game identity");
+        seenWithoutIds.add(day);
+      }
+      seenDates.add(day);
     }
     // One source CSV is all the input. Never read beyond the selected
     // completed-game cutoff, including same-day events from later dates.
@@ -48,7 +71,8 @@
       excluded_zero_minute_games:records.filter(row=>
         row.player===player&&row.date<=through&&row.minutes===0
       ).length,
-      missing_minutes:selected.filter(row=>row.minutes===null).length
+      missing_minutes:selected.filter(row=>row.minutes===null).length,
+      confirmed_minute_observations:selected.filter(row=>row.minutes>0).length
     };
     if(selected.length<5)return {...base,status:"INSUFFICIENT_HISTORY",statistics:null};
     const totalMinutes=selected.reduce((total,row)=>total+(row.minutes||0),0);
@@ -121,8 +145,10 @@
         table.append(row);
       }
       byId("instant-status").textContent="Calculated locally for "+player+
-        " · "+profile.used_games+" completed observations · "+profile.first_game+
-        " to "+profile.last_game+". No Python or report JSON required.";
+        " · "+profile.used_games+" source observations ("+
+        profile.confirmed_minute_observations+" with confirmed played minutes) · "+
+        profile.first_game+" to "+profile.last_game+
+        ". Historical description only; no future-game estimates.";
       byId("instant-provenance").textContent="Source: selected local CSV · "+
         (dataset.sha256?"SHA-256 "+dataset.sha256:"SHA-256 unavailable")+
         " · cutoff through "+through+" · "+profile.excluded_zero_minute_games+
