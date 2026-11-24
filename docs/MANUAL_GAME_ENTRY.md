@@ -10,16 +10,16 @@ This module is an **offline player-statistics notebook**, not a sportsbook or wa
 4. Under **Dataset control**, enter the data source and confirm that you are permitted to use the records for research.
 5. Select **Analyze draft**. The app serializes the draft into the existing canonical CSV format and passes it to exactly the same browser importer used for file uploads.
 6. Select your player and go to **Instant stats**. The browser calculates historical averages, sample standard deviation, observed percentiles, and recent-game comparisons without Python or any server API.
-7. Select **Export CSV** to preserve the draft. No rows are saved persistently by the app. Reloading or closing the page discards the draft; exported CSVs can be re-imported through Dataset control later.
+7. Select **Save on this device** to explicitly preserve this draft in local IndexedDB, or **Export CSV** to save a separate file. Nothing is automatically saved. Use **Restore saved draft** to recheck the source rows and SHA-256 before replacing the in-memory manual draft; **Delete saved draft** erases the on-device saved copy only. Exported CSVs can also be re-imported through Dataset control.
 
 ## Validation and safety
 
-- Browser-only draft: no API calls, tracking, database, or local storage.
+- No server API calls or tracking. Optional on-device IndexedDB storage is written only when Save is selected. This is not cloud sync: clearing browser storage or changing devices can lose a saved draft. Export CSV for independent backup.
 - Capped at 500 hand-entered records; the existing 20,000-row and 2 MB importer limits also apply.
 - Real `YYYY-MM-DD` completed dates; up to 80 played minutes; nonnegative whole-number statistics up to 200.
 - A zero-minute game cannot contain nonzero points, rebounds, or assists.
-- Duplicate player/game IDs are rejected, and same-day duplicates without distinct IDs are rejected.
-- Strings are escaped according to CSV quoting rules before importing or exporting.
+- Duplicate player/game IDs are rejected, and same-day duplicates without distinct IDs are rejected. The standalone historical calculations independently re-check those invariants rather than trusting an arbitrary caller.
+- Strings are escaped according to CSV quoting rules before importing or exporting. Saved drafts are schema-versioned, size-bounded, and checked against the SHA-256 of the re-generated canonical CSV before the UI accepts them. SHA-256 detects corruption or inconsistent stored data; it is not authentication and cannot prevent an adversary from replacing both data and digest.
 - The existing importer remains the canonical validator. A rejected import clears previously loaded dataset results, but not the manual draft.
 - Entered data is not automatically sourced or checked against an official provider; it remains user-declared.
 - Reports are historical descriptions only, not next-game forecasts, gambling odds, bets or staking outputs.
@@ -31,7 +31,7 @@ The repository source is ready for static hosting: the frontend lives entirely u
 ## Tests
 
 ```bash
-node --test tests/manual-entry.test.cjs
+node --test tests/manual-entry.test.cjs tests/draft-store.test.cjs
 RUN_BROWSER_ACCEPTANCE=1 CHROME_BIN=/usr/bin/google-chrome node --test tests/mobile-browser.test.cjs
 ```
 
