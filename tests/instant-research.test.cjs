@@ -104,3 +104,27 @@ test("descriptive summaries expose missing-minute counts without inventing parti
   assert.equal(result.statistics.points.production_per_36_minutes,null);
   assert.equal(result.statistics.points.sample_standard_deviation,0);
 });
+
+test("leave-one-out sensitivity exposes one extreme completed game without forecasting",()=>{
+  const {summarizeCompletedGames}=moduleUnderTest();
+  const values=[10,10,10,10,30];
+  const rows=values.map((pts,i)=>row("SYN-L","2026-01-0"+(i+1),pts,5,2,30,"G"+i));
+  rows.push(row("SYN-L","2026-01-06",200,100,100,30,"FUTURE"));
+  const report=summarizeCompletedGames(rows,"SYN-L","2026-01-05","all");
+  assert.equal(report.status,"READY");
+  assert.equal(report.statistics.points.mean,14);
+  assert.equal(report.statistics.points.leave_one_out_mean_sensitivity.min,10);
+  assert.equal(report.statistics.points.leave_one_out_mean_sensitivity.max,15);
+  assert.equal(report.statistics.points.leave_one_out_mean_sensitivity.largest_absolute_shift,4);
+  assert.equal(report.statistics.rebounds.leave_one_out_mean_sensitivity.largest_absolute_shift,0);
+  assert.equal(report.last_game,"2026-01-05");
+  const stable=summarizeCompletedGames(rows.slice(0,5),"SYN-L","2026-01-05","all");
+  assert.equal(stable.statistics.points.leave_one_out_mean_sensitivity.largest_absolute_shift,4);
+});
+
+test("extreme stat counts, duplicate identity and invalid dates cannot enter sensitivity math",()=>{
+  const {summarizeCompletedGames}=moduleUnderTest();
+  const rows=[10,10,10,10,30].map((pts,i)=>row("SYN-L","2026-03-0"+(i+1),pts,5,2));
+  assert.throws(()=>summarizeCompletedGames([...rows,row("SYN-L","2026-03-06",201,5,2)],"SYN-L","2026-03-05"),/Invalid/);
+  assert.throws(()=>summarizeCompletedGames([...rows,rows[0]],"SYN-L","2026-03-05"),/Duplicate/);
+});
