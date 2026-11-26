@@ -31,6 +31,16 @@
     const ordered=[...nums].sort((a,b)=>a-b);
     return ordered[Math.max(0,Math.ceil(p*ordered.length)-1)];
   }
+  // Leave-one-observation-out is a sensitivity diagnostic, not a confidence interval.
+  function leaveOneOutMeanSensitivity(values){
+    if(values.length<2) return null;
+    const total=values.reduce((sum,x)=>sum+x,0), mean=total/values.length;
+    const variants=values.map(value=>(total-value)/(values.length-1));
+    return {
+      min:Math.min(...variants), max:Math.max(...variants),
+      largest_absolute_shift:Math.max(...variants.map(value=>Math.abs(value-mean)))
+    };
+  }
   function summarizeCompletedGames(records,player,through,window="20"){
     if(!Array.isArray(records)||records.length>20000||typeof player!=="string"||
        !player.trim()||!dateOK(through)||!WINDOWS.has(String(window)))
@@ -84,6 +94,7 @@
         mean:average(values),
         median:median(values),
         sample_standard_deviation:sampleSD(values),
+        leave_one_out_mean_sensitivity:leaveOneOutMeanSensitivity(values),
         last_five_mean:average(values.slice(-5)),
         preceding_five_mean:values.length>=10?average(values.slice(-10,-5)):null,
         observed_p10:percentile(values,.1),
@@ -148,12 +159,16 @@
         " · "+profile.used_games+" source observations ("+
         profile.confirmed_minute_observations+" with confirmed played minutes) · "+
         profile.first_game+" to "+profile.last_game+
-        ". Historical description only; no future-game estimates.";
+        ". Descriptive means; single-game sensitivity is shown below. No forecasts.";
       byId("instant-provenance").textContent="Source: selected local CSV · "+
         (dataset.sha256?"SHA-256 "+dataset.sha256:"SHA-256 unavailable")+
         " · cutoff through "+through+" · "+profile.excluded_zero_minute_games+
         " zero-minute rows excluded · "+profile.missing_minutes+
         " selected rows without minutes (per-36 unavailable if any missing). "+
+        "Leave-one-out mean shift (max): points "+fmt(profile.statistics.points.leave_one_out_mean_sensitivity.largest_absolute_shift)+
+        ", rebounds "+fmt(profile.statistics.rebounds.leave_one_out_mean_sensitivity.largest_absolute_shift)+
+        ", assists "+fmt(profile.statistics.assists.leave_one_out_mean_sensitivity.largest_absolute_shift)+
+        " — how much the selected mean changes when any one game is excluded; not forecast uncertainty. "+
         (dataset.synthetic?"Synthetic demonstration. ":"")+
         "Source permission and completeness are user-declared, not independently verified. No forecast.";
     }catch(error){
